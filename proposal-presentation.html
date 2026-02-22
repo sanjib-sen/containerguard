@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ContainerGuard - Project Proposal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #fafafa;
+            --text: #1e1e2e;
+            --muted: #6c6c80;
+            --accent: #2563eb;
+            --accent-soft: #eff4ff;
+            --border: #e2e4ea;
+            --green: #16a34a;
+            --green-soft: #f0fdf4;
+            --red: #dc2626;
+            --red-soft: #fef2f2;
+            --orange: #ea580c;
+            --orange-soft: #fff7ed;
+            --purple: #7c3aed;
+            --purple-soft: #f5f3ff;
+            --card-radius: 10px;
+        }
+
+        .reveal {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 22px;
+            color: var(--text);
+        }
+        .reveal .slides section {
+            text-align: left;
+            padding: 20px 30px;
+            box-sizing: border-box;
+        }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            font-family: 'Inter', system-ui, sans-serif;
+            text-transform: none;
+            letter-spacing: -0.03em;
+            color: var(--text);
+        }
+        .reveal h2 {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 0.6em;
+        }
+        .reveal h3 {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4em;
+        }
+        .reveal ul, .reveal ol {
+            font-size: 0.88em;
+            line-height: 1.7;
+            margin: 0;
+        }
+        .reveal li { margin-bottom: 2px; }
+        .reveal code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: #f1f3f5;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.88em;
+        }
+        .reveal .slide-number {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: var(--muted);
+            right: 20px;
+            bottom: 14px;
+        }
+
+        /* ---- LAYOUTS ---- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+        .flex-row { display: flex; gap: 20px; align-items: flex-start; }
+
+        /* ---- CARDS ---- */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--card-radius);
+            padding: 16px 18px;
+            font-size: 0.82em;
+            line-height: 1.55;
+        }
+        .card h4 {
+            font-size: 0.9em;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+        }
+        .card.blue { background: var(--accent-soft); border-color: #bfdbfe; }
+        .card.green { background: var(--green-soft); border-color: #bbf7d0; }
+        .card.red { background: var(--red-soft); border-color: #fecaca; }
+        .card.orange { background: var(--orange-soft); border-color: #fed7aa; }
+        .card.purple { background: var(--purple-soft); border-color: #ddd6fe; }
+        .card.dark {
+            background: var(--text); color: #e2e4ea; border: none;
+        }
+        .card.dark h4 { color: white; }
+
+        /* ---- TAGS ---- */
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: 0.72em;
+            font-weight: 500;
+            margin: 2px 1px;
+        }
+        .tag.blue { background: #dbeafe; color: #1e40af; }
+        .tag.green { background: #dcfce7; color: #166534; }
+        .tag.orange { background: #ffedd5; color: #9a3412; }
+        .tag.red { background: #fee2e2; color: #991b1b; }
+        .tag.purple { background: #ede9fe; color: #5b21b6; }
+        .tag.gray { background: #f3f4f6; color: #374151; }
+
+        /* ---- TABLES ---- */
+        .reveal table {
+            width: 100%;
+            font-size: 0.75em;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .reveal th {
+            background: var(--text);
+            color: white;
+            font-weight: 600;
+            padding: 8px 14px;
+            text-align: left;
+        }
+        .reveal td {
+            padding: 7px 14px;
+            border-top: 1px solid var(--border);
+        }
+        .reveal tr:nth-child(even) td { background: #f8f9fb; }
+
+        /* ---- TITLE SLIDE ---- */
+        .title-slide {
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .title-slide h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-bottom: 0;
+        }
+        .title-slide .subtitle {
+            font-size: 1em;
+            color: var(--accent);
+            font-weight: 500;
+            margin-top: 8px;
+        }
+        .title-slide .meta {
+            margin-top: 40px;
+            font-size: 0.72em;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        /* ---- SECTION DIVIDERS ---- */
+        .divider {
+            text-align: center !important;
+            background: var(--text);
+        }
+        .divider h2 {
+            color: white !important;
+            font-size: 1.8em;
+            margin-bottom: 0.2em;
+        }
+        .divider p {
+            color: #8888a0;
+            font-size: 0.85em;
+        }
+
+        /* ---- ARCHITECTURE (CSS-based) ---- */
+        .arch-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            font-size: 0.72em;
+        }
+        .arch-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+        .arch-box {
+            border-radius: 8px;
+            padding: 8px 14px;
+            text-align: center;
+            font-weight: 500;
+            border: 1.5px solid;
+            white-space: nowrap;
+        }
+        .arch-box.agent { background: #ecfdf5; border-color: #86efac; color: #166534; }
+        .arch-box.server { background: #eff6ff; border-color: #93c5fd; color: #1e40af; min-width: 380px; }
+        .arch-box.store { background: #f5f3ff; border-color: #c4b5fd; color: #5b21b6; }
+        .arch-box.ui { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+        .arch-arrow {
+            color: var(--muted);
+            font-size: 1.4em;
+            padding: 2px 0;
+            text-align: center;
+            line-height: 1;
+        }
+        .arch-label {
+            font-size: 0.82em;
+            color: var(--muted);
+            text-align: center;
+            margin: -2px 0 2px 0;
+        }
+        .arch-inner {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            padding: 6px 0 2px 0;
+            flex-wrap: wrap;
+        }
+        .arch-chip {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 5px;
+            padding: 3px 10px;
+            font-size: 0.85em;
+        }
+
+        /* ---- METRIC CARDS ---- */
+        .metric {
+            text-align: center;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--card-radius);
+            padding: 16px 10px;
+        }
+        .metric .value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+            line-height: 1;
+        }
+        .metric .label {
+            font-size: 0.68em;
+            color: var(--muted);
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* ---- TIMELINE ---- */
+        .tl-item {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+            align-items: start;
+        }
+        .tl-badge {
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.72em;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+        .tl-content {
+            font-size: 0.78em;
+            color: #444;
+            line-height: 1.5;
+        }
+        .tl-content strong { color: var(--text); }
+
+        /* ---- FOOTER ---- */
+        .reveal::after {
+            content: 'ContainerGuard  /  COSC 6352 Project Proposal';
+            position: fixed;
+            bottom: 12px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            color: #bbb;
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ==================== TITLE ==================== -->
+<section class="title-slide">
+    <h1>ContainerGuard</h1>
+    <div class="subtitle">Container Security Monitoring & Compliance Platform</div>
+    <p style="font-size: 0.82em; color: var(--muted); max-width: 500px; margin-top: 16px; line-height: 1.6;">
+        Real-time security telemetry, vulnerability scanning, and compliance enforcement for containerized applications
+    </p>
+    <div class="meta">
+        <strong style="color: var(--text);">COSC 6352</strong> &middot; Advanced Operating Systems<br/>
+        Texas A&amp;M University, Corpus Christi &middot; Spring 2026
+    </div>
+</section>
+
+<!-- ==================== AGENDA ==================== -->
+<section>
+    <h2>Agenda</h2>
+    <div class="grid-3" style="margin-top: 20px;">
+        <div class="card blue"><h4>1. Project Overview</h4></div>
+        <div class="card blue"><h4>2. System Model</h4></div>
+        <div class="card blue"><h4>3. Architecture</h4></div>
+        <div class="card blue"><h4>4. Algorithms & Protocols</h4></div>
+        <div class="card blue"><h4>5. Concurrency & Distribution</h4></div>
+        <div class="card blue"><h4>6. Implementation Plan</h4></div>
+        <div class="card blue"><h4>7. Evaluation Plan</h4></div>
+        <div class="card blue"><h4>8. Challenges</h4></div>
+        <div class="card blue"><h4>9. Team Roles</h4></div>
+    </div>
+</section>
+
+<!-- ==================== 1. OVERVIEW ==================== -->
+<section class="divider">
+    <h2>1. Project Overview</h2>
+    <p>What problem are we solving?</p>
+</section>
+
+<section>
+    <h2>The Problem</h2>
+    <div class="card red" style="margin-bottom: 20px;">
+        <h4>Containers are everywhere, but visibility is lacking</h4>
+        Organizations deploy hundreds of containers with no unified view of what happens <em>inside</em> them at runtime.
+    </div>
+    <div class="grid-2">
+        <div>
+            <h3>Security Blind Spots</h3>
+            <ul>
+                <li>Unauthorized network connections</li>
+                <li>Unexpected open ports</li>
+                <li>Sensitive file access (<code>/etc/shadow</code>)</li>
+                <li>Resource anomalies (e.g., crypto-mining)</li>
+                <li>Vulnerable base images in production</li>
+            </ul>
+        </div>
+        <div>
+            <h3>Why It Matters</h3>
+            <ul>
+                <li>Containers share the host kernel => one compromise can escalate</li>
+                <li>Short-lived containers make forensics hard</li>
+                <li>Compliance (CIS Benchmarks) requires continuous monitoring</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h2>Our Solution</h2>
+    <p style="color: var(--muted); margin-bottom: 16px;">A distributed monitoring platform with three core components:</p>
+    <div class="grid-3">
+        <div class="card blue" style="min-height: 150px;">
+            <h4>Lightweight Agent</h4>
+            Deployed per container. Collects:<br/><br/>
+            <span class="tag blue">Network I/O</span>
+            <span class="tag blue">Open Ports</span>
+            <span class="tag blue">File Access</span>
+            <span class="tag blue">CPU / Mem</span>
+            <span class="tag blue">Processes</span>
+        </div>
+        <div class="card green" style="min-height: 150px;">
+            <h4>Central Server (FastAPI)</h4>
+            Aggregates telemetry & enforces security:<br/><br/>
+            <span class="tag green">Compliance</span>
+            <span class="tag green">Alerts</span>
+            <span class="tag green">Vuln Scanner</span>
+            <span class="tag green">Anomaly Detection</span>
+        </div>
+        <div class="card orange" style="min-height: 150px;">
+            <h4>Web Dashboard + Grafana</h4>
+            Real-time operator UI:<br/><br/>
+            <span class="tag orange">Live Metrics</span>
+            <span class="tag orange">Alert Feed</span>
+            <span class="tag orange">CVE Reports</span>
+            <span class="tag orange">Compliance</span>
+        </div>
+    </div>
+    <p style="font-size: 0.72em; color: var(--muted); margin-top: 14px;">
+        Similar to: Sysdig Secure, Falco, Datadog Container Monitoring
+    </p>
+</section>
+
+<!-- ==================== 2. SYSTEM MODEL ==================== -->
+<section class="divider">
+    <h2>2. System Model & Assumptions</h2>
+    <p>What kind of distributed system?</p>
+</section>
+
+<section>
+    <h2>System Model</h2>
+    <div class="grid-2">
+        <div class="card">
+            <h4>Architecture: Centralized (Hub & Spoke)</h4>
+            Single control-plane server + N distributed agents, one per container. Agents are stateless collectors that push telemetry to the server.
+        </div>
+        <div class="card">
+            <h4>Network: Reliable (Docker bridge/overlay)</h4>
+            Communication over TCP (HTTP + WebSocket). Retries with exponential backoff handle transient failures.
+        </div>
+        <div class="card red">
+            <h4>Failure Model: Crash-Failure</h4>
+            No Byzantine faults. Agents/server may crash but don't act maliciously.<br/>
+            Agent crash => server detects via missed heartbeats.<br/>
+            Server crash => agents buffer locally & replay on reconnect.
+        </div>
+        <div class="card green">
+            <h4>Consistency Model</h4>
+            <strong>Eventual consistency</strong> for metrics (1-5s lag OK).<br/>
+            <strong>Strong consistency</strong> for compliance state & alert acks (PostgreSQL ACID).
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 3. ARCHITECTURE ==================== -->
+<section class="divider">
+    <h2>3. High-Level Architecture</h2>
+    <p>Components and communication</p>
+</section>
+
+<section>
+    <h2>Architecture</h2>
+    <div class="arch-flow">
+        <div class="arch-row">
+            <div class="arch-box agent">Container 1<br/><small>Agent</small></div>
+            <div class="arch-box agent">Container 2<br/><small>Agent</small></div>
+            <div class="arch-box agent">Container 3<br/><small>Agent</small></div>
+            <div style="color: var(--muted);">. . .</div>
+            <div class="arch-box agent">Container N<br/><small>Agent</small></div>
+        </div>
+
+        <div class="arch-arrow">&#x25BC;</div>
+        <div class="arch-label">HTTP REST (telemetry every 5s, heartbeat every 10s)</div>
+
+        <div class="arch-box server">
+            <strong>Central Server (FastAPI)</strong>
+            <div class="arch-inner">
+                <span class="arch-chip">Telemetry Collector</span>
+                <span class="arch-chip">Compliance Engine</span>
+                <span class="arch-chip">Vuln Scanner (Trivy)</span>
+                <span class="arch-chip">Alert Manager</span>
+                <span class="arch-chip">Metrics Exporter</span>
+            </div>
+            <div style="font-size: 0.82em; color: #6b7280; margin-top: 4px;">Internal event bus: Redis Pub/Sub</div>
+        </div>
+
+        <div class="arch-arrow">&#x25BC;</div>
+
+        <div class="arch-row" style="gap: 14px;">
+            <div class="arch-box store">PostgreSQL<br/><small>State & Events</small></div>
+            <div class="arch-box store">Redis<br/><small>Cache & Pub/Sub</small></div>
+            <div class="arch-box store">Prometheus<br/><small>Time-series</small></div>
+            <div style="color: var(--muted); font-size: 1.2em;">&rarr;</div>
+            <div class="arch-box store">Grafana<br/><small>Dashboards</small></div>
+        </div>
+
+        <div class="arch-arrow" style="margin-top: 4px;">&#x25B2;</div>
+        <div class="arch-label">WebSocket (real-time push)</div>
+
+        <div class="arch-box ui">
+            <strong>Web Dashboard</strong> (React + TypeScript + Tailwind)
+        </div>
+    </div>
+</section>
+
+<section>
+    <h2>Communication Patterns</h2>
+    <div style="margin-top: 10px;">
+        <table>
+            <thead><tr><th>Path</th><th>Protocol</th><th>Pattern</th></tr></thead>
+            <tbody>
+                <tr><td>Agent => Server</td><td>HTTP REST</td><td>Push telemetry every 5s, heartbeat every 10s</td></tr>
+                <tr><td>Server => Dashboard</td><td>WebSocket</td><td>Real-time push on new events</td></tr>
+                <tr><td>Server internal</td><td>Redis Pub/Sub</td><td>Event bus between modules (ingest => alert => broadcast)</td></tr>
+                <tr><td>Prometheus => Server</td><td>HTTP scrape</td><td>Pull metrics every 15s from /metrics</td></tr>
+                <tr><td>Agent <= Server</td><td>HTTP REST</td><td>Agent polls config every 60s</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="grid-2" style="margin-top: 16px;">
+        <div class="card">
+            <h4>Agent Data Collected</h4>
+            <span class="tag blue">Inbound/outbound connections</span>
+            <span class="tag blue">Listening ports + PIDs</span>
+            <span class="tag blue">File read/write events</span>
+            <span class="tag blue">CPU / Memory / Net / Disk</span>
+            <span class="tag blue">Running processes</span>
+            <span class="tag blue">DNS queries</span>
+        </div>
+        <div class="card">
+            <h4>Server Capabilities</h4>
+            <span class="tag green">Telemetry aggregation</span>
+            <span class="tag green">Compliance rule evaluation</span>
+            <span class="tag green">Trivy image scanning</span>
+            <span class="tag green">Threshold-based alerting</span>
+            <span class="tag green">Z-score anomaly detection</span>
+            <span class="tag green">Prometheus metrics export</span>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 4. ALGORITHMS ==================== -->
+<section class="divider">
+    <h2>4. Algorithms & Protocols</h2>
+    <p>What makes this distributed?</p>
+</section>
+
+<section>
+    <h2>Algorithms & Protocols</h2>
+    <div class="grid-2">
+        <div class="card blue">
+            <h4>Anomaly Detection</h4>
+            <strong>Sliding Window + Z-Score</strong><br/>
+            &bull; 5-min rolling average per metric per container<br/>
+            &bull; Alert when current value > 2 std deviations from mean<br/>
+            &bull; Configurable per metric (CPU, memory, net I/O)
+        </div>
+        <div class="card green">
+            <h4>Failure Handling</h4>
+            <strong>Agent => Server:</strong> exponential backoff (1s, 2s, 4s... max 30s)<br/>
+            <strong>Heartbeat:</strong> 30s missed => "unreachable", 5min => "offline"<br/>
+            <strong>Idempotent ingestion:</strong> unique batch IDs, server deduplicates
+        </div>
+        <div class="card orange">
+            <h4>Network Security Rules</h4>
+            &bull; <strong>Allowlist / Blocklist</strong> for outbound destinations<br/>
+            &bull; <strong>Port exposure detection</strong> for unexpected listeners<br/>
+            &bull; <strong>Connection rate limiting</strong> (N conns/sec threshold)
+        </div>
+        <div class="card purple">
+            <h4>Compliance Rule Engine</h4>
+            JSON predicates evaluated against container state:<br/><br/>
+            <code style="font-size: 0.85em; background: rgba(255,255,255,0.5);">{ "condition": "ALL proc.user != root" }</code><br/><br/>
+            Evaluated periodically + on matching telemetry events
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 5. CONCURRENCY ==================== -->
+<section class="divider">
+    <h2>5. Concurrency / Parallel /<br/>Asynchronous / Distributed</h2>
+    <p>How do we handle concurrent operations?</p>
+</section>
+
+<section>
+    <h2>Agent Concurrency (Single Node)</h2>
+    <div class="card dark" style="margin-bottom: 16px;">
+        <h4>Core: asyncio event loop drives all collectors concurrently</h4>
+    </div>
+    <div class="grid-2">
+        <div class="card">
+            <h4>Async Tasks (non-blocking)</h4>
+            <ul style="margin: 0;">
+                <li><strong>ResourceCollector</strong> => reads /proc + cgroups</li>
+                <li><strong>PortCollector</strong> => parses /proc/net/tcp</li>
+                <li><strong>ProcessCollector</strong> => psutil.process_iter()</li>
+                <li><strong>Batch sender</strong> => drains queue every 5s</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h4>Background Threads (blocking I/O)</h4>
+            <ul style="margin: 0;">
+                <li><strong>FileCollector</strong> => watchdog (inotify) thread</li>
+                <li><strong>NetworkCollector</strong> => raw socket recv() thread</li>
+            </ul>
+            <h4 style="margin-top: 10px;">Synchronization</h4>
+            <ul style="margin: 0;">
+                <li><code>asyncio.Lock</code> => shared telemetry buffer</li>
+                <li><code>asyncio.Queue</code> => thread-to-async bridge</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h2>Server & System-Level Concurrency</h2>
+    <div class="grid-2">
+        <div class="card blue">
+            <h4>Server (Single Node)</h4>
+            <ul style="margin: 0;">
+                <li><strong>FastAPI + Uvicorn</strong> => async ASGI request handling</li>
+                <li><strong>Gunicorn</strong> => multiple worker processes (1 per core)</li>
+                <li><strong>asyncio.create_task</strong> => background jobs (compliance, scans)</li>
+                <li><strong>SQLAlchemy async pool</strong> => connection management</li>
+                <li><strong>Redis Pub/Sub</strong> => decouples ingestion from alerting & WebSocket</li>
+            </ul>
+        </div>
+        <div class="card green">
+            <h4>Distributed Properties</h4>
+            <ul style="margin: 0;">
+                <li><strong>Agents are independent</strong> => no inter-agent communication</li>
+                <li><strong>Natural load distribution</strong> => each agent handles one container</li>
+                <li><strong>Server is stateless</strong> => all state in PostgreSQL + Redis</li>
+                <li><strong>Horizontally scalable</strong> => add server instances behind a load balancer</li>
+                <li><strong>Self-scheduling</strong> => agents manage their own intervals</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 6. IMPLEMENTATION PLAN ==================== -->
+<section class="divider">
+    <h2>6. Implementation Plan</h2>
+    <p>How will we build it?</p>
+</section>
+
+<section>
+    <h2>Tech Stack</h2>
+    <table>
+        <thead><tr><th>Layer</th><th>Technology</th><th>Why</th></tr></thead>
+        <tbody>
+            <tr><td>Language</td><td><strong>Python 3.12</strong></td><td>Strong systems monitoring ecosystem</td></tr>
+            <tr><td>Package Manager</td><td><strong>uv</strong></td><td>Fast project/package manager, replaces pip + venv + poetry</td></tr>
+            <tr><td>API Framework</td><td><strong>FastAPI</strong></td><td>Async-native, auto OpenAPI docs, WebSocket support</td></tr>
+            <tr><td>Server</td><td><strong>Uvicorn + Gunicorn</strong></td><td>Production async ASGI with worker management</td></tr>
+            <tr><td>ORM / Migrations</td><td><strong>SQLAlchemy 2.0 + Alembic</strong></td><td>Async ORM with schema migrations</td></tr>
+            <tr><td>Database</td><td><strong>PostgreSQL 16</strong></td><td>ACID transactions for alerts & compliance</td></tr>
+            <tr><td>Cache / PubSub</td><td><strong>Redis 7</strong></td><td>Real-time event bus + caching layer</td></tr>
+            <tr><td>Metrics</td><td><strong>Prometheus + Grafana</strong></td><td>Industry standard metrics pipeline</td></tr>
+            <tr><td>Vuln Scanner</td><td><strong>Trivy</strong></td><td>Open-source, scans images + filesystems</td></tr>
+            <tr><td>Frontend</td><td><strong>React + TypeScript + Tailwind</strong></td><td>Modern real-time dashboard UI</td></tr>
+            <tr><td>Monitoring Libs</td><td><strong>psutil, watchdog, scapy</strong></td><td>CPU/mem, file events, network capture</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section>
+    <h2>Project Structure</h2>
+    <div class="grid-2" style="gap: 16px;">
+        <div class="card" style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.72em; line-height: 1.7; white-space: pre;">container-guard/
+├── docker-compose.yml
+│
+├── <strong>agent/</strong>
+│   ├── pyproject.toml         <span style="color: var(--muted);"># uv managed</span>
+│   └── src/
+│       ├── main.py
+│       ├── config.py
+│       ├── models.py
+│       ├── collectors/
+│       │   ├── network.py
+│       │   ├── ports.py
+│       │   ├── filesystem.py
+│       │   ├── resources.py
+│       │   └── processes.py
+│       └── transport/
+│           ├── client.py
+│           └── buffer.py</div>
+        <div class="card" style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.72em; line-height: 1.7; white-space: pre;"><strong>server/</strong>
+├── pyproject.toml             <span style="color: var(--muted);"># uv managed</span>
+├── alembic/
+└── src/
+    ├── main.py
+    ├── api/       <span style="color: var(--muted);"># REST endpoints</span>
+    ├── core/      <span style="color: var(--muted);"># business logic</span>
+    ├── db/        <span style="color: var(--muted);"># SQLAlchemy models</span>
+    ├── workers/   <span style="color: var(--muted);"># background tasks</span>
+    └── metrics/   <span style="color: var(--muted);"># Prometheus exporter</span>
+
+<strong>dashboard/</strong>     <span style="color: var(--muted);"># React + Tailwind</span>
+<strong>grafana/</strong>       <span style="color: var(--muted);"># provisioning configs</span>
+<strong>prometheus/</strong>    <span style="color: var(--muted);"># scrape configs</span>
+<strong>demo/</strong>          <span style="color: var(--muted);"># sample containers</span></div>
+    </div>
+</section>
+
+<section>
+    <h2>Milestones</h2>
+    <div class="tl-item">
+        <span class="tl-badge">Weeks 1-3</span>
+        <div class="tl-content">
+            <strong>Foundation</strong> &middot; Project scaffolding (uv, Docker Compose) &middot; Agent resource collector (psutil) &middot; Server skeleton with registration & heartbeat &middot; DB schema + Alembic migrations &middot; Basic Prometheus exporter
+        </div>
+    </div>
+    <div class="tl-item">
+        <span class="tl-badge">Weeks 4-6</span>
+        <div class="tl-content">
+            <strong>Core Monitoring</strong> &middot; All agent collectors (network, ports, files, processes) &middot; Telemetry storage & REST APIs &middot; WebSocket broadcast &middot; Dashboard with container list + charts &middot; Grafana dashboards
+        </div>
+    </div>
+    <div class="tl-item">
+        <span class="tl-badge">Weeks 7-9</span>
+        <div class="tl-content">
+            <strong>Security Features</strong> &middot; Trivy vulnerability scanning &middot; Compliance rule engine &middot; Alert manager + thresholds &middot; Network allowlist/blocklist &middot; Anomaly detection (Z-score)
+        </div>
+    </div>
+    <div class="tl-item">
+        <span class="tl-badge">Weeks 10-12</span>
+        <div class="tl-content">
+            <strong>Polish & Demo</strong> &middot; Full dashboard UI &middot; Agent offline buffering &middot; Deploy vulnerable demo containers &middot; Load testing &middot; Documentation & report
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 7. EVALUATION ==================== -->
+<section class="divider">
+    <h2>7. Evaluation Plan</h2>
+    <p>How will we prove it works?</p>
+</section>
+
+<section>
+    <h2>Demo Scenarios</h2>
+    <table>
+        <thead><tr><th>#</th><th>Scenario</th><th>Expected Result</th></tr></thead>
+        <tbody>
+            <tr><td>1</td><td>Process writes to <code>/etc/shadow</code></td><td><span class="tag red">ALERT</span> within 5 seconds</td></tr>
+            <tr><td>2</td><td>Container binds unexpected port 4444</td><td>Dashboard shows port in real-time</td></tr>
+            <tr><td>3</td><td>CPU spike via <code>stress-ng</code></td><td>Anomaly detection triggers <span class="tag red">ALERT</span></td></tr>
+            <tr><td>4</td><td>Scan <code>nginx:1.14</code> image</td><td>CVE report with severity breakdown</td></tr>
+            <tr><td>5</td><td>Outbound request to blocked IP</td><td><span class="tag red">ALERT</span> + logged in dashboard</td></tr>
+            <tr><td>6</td><td>Kill agent process</td><td>Server marks "unreachable" within 30s</td></tr>
+            <tr><td>7</td><td>Stop & restart server</td><td>Agents buffer locally, replay on reconnect</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section>
+    <h2>Performance Targets & Testing</h2>
+    <div class="grid-4" style="margin-bottom: 20px;">
+        <div class="metric">
+            <span class="value">&lt; 3s</span>
+            <span class="label">Telemetry latency<br/>(event => dashboard)</span>
+        </div>
+        <div class="metric">
+            <span class="value">&lt; 2%</span>
+            <span class="label">Agent CPU<br/>overhead</span>
+        </div>
+        <div class="metric">
+            <span class="value">&lt; 30 MB</span>
+            <span class="label">Agent memory<br/>footprint</span>
+        </div>
+        <div class="metric">
+            <span class="value">50+</span>
+            <span class="label">Containers per<br/>server instance</span>
+        </div>
+    </div>
+    <div class="grid-3">
+        <div class="card">
+            <h4>Unit Tests</h4>
+            Each collector module, compliance engine, alert manager<br/>
+            <span class="tag gray">pytest</span> <span class="tag gray">pytest-asyncio</span>
+        </div>
+        <div class="card">
+            <h4>Integration Tests</h4>
+            Full Agent => Server telemetry pipeline end-to-end<br/>
+            <span class="tag gray">httpx</span> <span class="tag gray">Docker</span>
+        </div>
+        <div class="card">
+            <h4>Fault Injection</h4>
+            Kill agents/server, verify recovery, buffering, heartbeat detection
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 8. CHALLENGES ==================== -->
+<section class="divider">
+    <h2>8. Challenges & Difficulties</h2>
+</section>
+
+<section>
+    <h2>Challenges & Mitigations</h2>
+    <table>
+        <thead><tr><th>Challenge</th><th>Mitigation</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>Race conditions</strong> in shared telemetry buffer</td>
+                <td><code>asyncio.Lock</code> + <code>asyncio.Queue</code> for thread-to-async bridge</td>
+            </tr>
+            <tr>
+                <td><strong>Agent overhead</strong> on monitored container</td>
+                <td>Read /proc directly instead of spawning commands; configurable intervals</td>
+            </tr>
+            <tr>
+                <td><strong>Data volume</strong> at scale</td>
+                <td>5s batching, server-side sampling, PostgreSQL time partitioning</td>
+            </tr>
+            <tr>
+                <td><strong>Clock skew</strong> across agents</td>
+                <td>UTC everywhere; server applies receipt timestamp for ordering</td>
+            </tr>
+            <tr>
+                <td><strong>Network capture</strong> needs privileges</td>
+                <td>Agent runs with <code>NET_RAW</code> + <code>SYS_PTRACE</code> capabilities</td>
+            </tr>
+            <tr>
+                <td><strong>Trivy scan blocking</strong> the API</td>
+                <td>Async subprocess; results streamed via WebSocket</td>
+            </tr>
+            <tr>
+                <td><strong>WebSocket fan-out</strong> at scale</td>
+                <td>Redis Pub/Sub as broadcast layer, one coroutine per client</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ==================== 9. TEAM ROLES ==================== -->
+<section class="divider">
+    <h2>9. Team Roles</h2>
+</section>
+
+<section>
+    <h2>Team Roles</h2>
+    <div class="grid-3" style="margin-top: 10px;">
+        <div class="card blue" style="min-height: 160px;">
+            <h4>Agent Engineer</h4>
+            <em style="color: var(--muted);">TBD</em><br/><br/>
+            All collector modules (network, ports, files, resources, processes), transport layer, ring buffer, heartbeat
+        </div>
+        <div class="card green" style="min-height: 160px;">
+            <h4>Server Engineer</h4>
+            <em style="color: var(--muted);">TBD</em><br/><br/>
+            FastAPI endpoints, DB schema, compliance engine, alert manager, Trivy integration, Prometheus exporter
+        </div>
+        <div class="card orange" style="min-height: 160px;">
+            <h4>Frontend / DevOps</h4>
+            <em style="color: var(--muted);">TBD</em><br/><br/>
+            React dashboard, WebSocket integration, Grafana dashboards, Docker Compose, CI/CD, demo scenarios
+        </div>
+    </div>
+    <div class="card" style="margin-top: 16px;">
+        <h4>Shared</h4>
+        Code reviews, testing, documentation, presentation
+    </div>
+</section>
+
+<!-- ==================== THANK YOU ==================== -->
+<section class="title-slide">
+    <h1 style="font-size: 2.4em;">Thank You</h1>
+    <div class="subtitle">Questions?</div>
+    <div style="margin-top: 40px;">
+        <div style="display: inline-flex; gap: 16px;">
+            <span class="tag blue" style="font-size: 0.9em; padding: 6px 16px;">Distributed</span>
+            <span class="tag green" style="font-size: 0.9em; padding: 6px 16px;">Concurrent</span>
+            <span class="tag orange" style="font-size: 0.9em; padding: 6px 16px;">Resilient</span>
+        </div>
+    </div>
+    <p style="font-size: 0.72em; color: var(--muted); margin-top: 30px;">
+        Agents in N containers => Central FastAPI server => Real-time dashboard & Grafana
+    </p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+    Reveal.initialize({
+        hash: true,
+        slideNumber: 'c/t',
+        width: 1100,
+        height: 680,
+        margin: 0.02,
+        minScale: 0.5,
+        maxScale: 1.5,
+        transition: 'fade',
+        transitionSpeed: 'fast',
+        overview: true,
+        plugins: [RevealHighlight]
+    });
+
+    // --- Custom Esc logic ---
+    // Single Esc:  toggle overview (with left/right arrow navigation)
+    // Double Esc:  exit fullscreen
+    // Triple Esc:  jump to slide 1
+    var escTimestamps = [];
+    var ESC_WINDOW = 600; // ms window for multi-press detection
+
+    document.addEventListener('keydown', function(e) {
+        // Enter in overview => go to selected slide
+        if (e.key === 'Enter' && Reveal.isOverview()) {
+            e.preventDefault();
+            Reveal.toggleOverview(false);
+            return;
+        }
+
+        // Left/Right arrows in overview => scroll through slides
+        if (Reveal.isOverview() && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            // reveal.js handles this natively, just let it through
+            return;
+        }
+
+        if (e.key !== 'Escape') {
+            escTimestamps = [];
+            return;
+        }
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        var now = Date.now();
+        // Remove old presses outside the window
+        escTimestamps = escTimestamps.filter(function(t) { return now - t < ESC_WINDOW; });
+        escTimestamps.push(now);
+
+        var count = escTimestamps.length;
+
+        if (count === 3) {
+            // Triple Esc => go to slide 1
+            escTimestamps = [];
+            if (Reveal.isOverview()) Reveal.toggleOverview(false);
+            if (document.fullscreenElement) document.exitFullscreen();
+            Reveal.slide(0, 0);
+        } else if (count === 2) {
+            // Double Esc => exit fullscreen
+            // Use a short delay so we can still detect a third press
+            setTimeout(function() {
+                if (escTimestamps.length >= 3) return; // triple detected, skip
+                escTimestamps = [];
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else if (Reveal.isOverview()) {
+                    Reveal.toggleOverview(false);
+                }
+            }, ESC_WINDOW);
+        } else if (count === 1) {
+            // Single Esc => toggle overview (delay to wait for possible double)
+            setTimeout(function() {
+                if (escTimestamps.length >= 2) return; // double/triple detected, skip
+                escTimestamps = [];
+                Reveal.toggleOverview();
+            }, ESC_WINDOW);
+        }
+    }, true); // capture phase to intercept before reveal.js
+</script>
+</body>
+</html>
