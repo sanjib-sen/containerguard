@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    container_name: containerguard-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    container_name: containerguard-server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
+    ports:
+      - "8001:8000"
+
+volumes:
+  postgres_data:
