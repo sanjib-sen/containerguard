@@ -26,7 +26,8 @@ app.include_router(alerts_router, prefix=api_v1_prefix)
 app.include_router(compliance_router, prefix=api_v1_prefix)
 app.include_router(scans_router, prefix=api_v1_prefix)
 app.include_router(telemetry_router, prefix=api_v1_prefix)
-app.include_router(websocket_router, prefix=api_v1_prefix)
+
+app.include_router(websocket_router, prefix="") # /ws/...
 
 
 @app.get("/")
