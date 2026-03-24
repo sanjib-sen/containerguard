@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY pyproject.toml README.md alembic.ini ./
+COPY pyproject.toml readme.md alembic.ini ./
 COPY alembic ./alembic
 COPY src ./src
 
