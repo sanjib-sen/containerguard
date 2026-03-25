@@ -11,6 +11,8 @@ dependencies = [
     "asyncpg",
     "alembic",
     "pydantic-settings",
-    "uvicorn"
+    "gunicorn",
+    "uvicorn",
+    "prometheus_client"
 ]
-readme = "README.md"
+readme = "readme.md"

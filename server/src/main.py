@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from prometheus_client import make_asgi_app
+
 from .api.agents import router as agents_router
 from .api.alerts import router as alerts_router
 from .api.compliance import router as compliance_router
@@ -19,6 +21,10 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
+
 api_v1_prefix = "/api/v1"
 
 app.include_router(agents_router, prefix=api_v1_prefix)
