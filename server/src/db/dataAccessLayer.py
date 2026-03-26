@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .repository.agentsRepo import AgentsRepository
+from .repository.telemetryRepo import TelemetryRepository
 from .session import get_db
 
 
@@ -12,6 +13,7 @@ class DataAccessLayer:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.agents = AgentsRepository(session)
+        self.telemetry = TelemetryRepository(session)
 
 
 def create_data_access_layer(session: AsyncSession) -> DataAccessLayer:
