@@ -439,8 +439,8 @@ container-guard/
 - [x] System design document
 - [ ] Project scaffolding (monorepo, Docker Compose, CI)
 - [ ] Agent: resource collector (CPU, memory, network I/O via psutil)
-- [ ] Server: FastAPI skeleton, agent registration, heartbeat
-- [ ] Database schema + migrations (Alembic)
+- [x] Server: FastAPI skeleton, agent registration, heartbeat
+- [x] Database schema + migrations (Alembic)
 - [ ] Agent -> Server telemetry push (basic)
 - [ ] Prometheus exporter with basic metrics
 - **Deliverable**: Agent reports CPU/memory to server; visible in Prometheus
@@ -450,7 +450,7 @@ container-guard/
 - [ ] Agent: port scanner (open ports)
 - [ ] Agent: file access monitor (watchdog)
 - [ ] Agent: process enumerator
-- [ ] Server: telemetry storage in PostgreSQL
+- [x] Server: telemetry storage in PostgreSQL
 - [ ] Server: REST API for querying telemetry
 - [ ] Server: WebSocket broadcast for real-time data
 - [ ] Dashboard: basic container list + resource charts
