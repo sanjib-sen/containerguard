@@ -90,7 +90,7 @@ class NetworkEvents(Base):
     )
     direction: Mapped[str] = mapped_column(Text, nullable=False)
     src_ip: Mapped[str] = mapped_column(INET, nullable=False)
-    dst_ip: Mapped[str] = mapped_column(INET, nullable=False)
+    dst_ip: Mapped[str | None] = mapped_column(INET, nullable=True)
     port: Mapped[int] = mapped_column(nullable=False)
     protocol: Mapped[str] = mapped_column(Text, nullable=False)
     bytes: Mapped[int] = mapped_column(nullable=False)
@@ -128,6 +128,70 @@ class FilesystemEvents(Base):
         nullable=False,
         server_default=func.now(),
     )
+
+
+class PortSnapshots(Base):
+    """
+    port snapshots table
+    """
+    __tablename__ = "port_snapshots"
+    __table_args__ = (
+        Index("ix_port_snapshots_agent_id", "agent_id"),
+        Index("ix_port_snapshots_timestamp", "timestamp"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    agent_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=False,
+    )
+    port: Mapped[int] = mapped_column(nullable=False)
+    protocol: Mapped[str] = mapped_column(Text, nullable=False)
+    pid: Mapped[int] = mapped_column(nullable=False)
+    process_name: Mapped[str] = mapped_column(Text, nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+class ProcessSnapshots(Base):
+    """
+    process snapshots table
+    """
+    __tablename__ = "process_snapshots"
+    __table_args__ = (
+        Index("ix_process_snapshots_agent_id", "agent_id"),
+        Index("ix_process_snapshots_timestamp", "timestamp"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    agent_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=False,
+    )
+    pid: Mapped[int] = mapped_column(nullable=False)
+    command: Mapped[str] = mapped_column(Text, nullable=False)
+    user: Mapped[str] = mapped_column(Text, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
 
 class ResourceSnapshots(Base):
     """
