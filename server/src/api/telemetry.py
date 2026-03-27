@@ -28,10 +28,10 @@ async def postTelemetry(payload: TelemetryIngestRequest, dal: DataAccessLayer = 
             else None
         ),
         stored_resources=write_result.resource_snapshot is not None,
-        stored_network_connections=len(payload.network.connections) if payload.network is not None else 0,
-        stored_filesystem_events=len(payload.filesystem.events) if payload.filesystem is not None else 0,
-        stored_processes=len(payload.processes),
-        stored_ports=len(payload.ports),
+        stored_network_connections=write_result.stored_network_connections,
+        stored_filesystem_events=write_result.stored_filesystem_events,
+        stored_processes=write_result.stored_processes,
+        stored_ports=write_result.stored_ports,
         raw_payload=write_result.event.payload_json,
     )
 
@@ -54,4 +54,3 @@ async def getResources():
 @router.get("/{agent_id}")
 async def getTelemetry(agent_id):
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Telemetry query is not implemented yet")
-

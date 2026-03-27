@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models import Agent, ResourceSnapshots, TelemetryEvents
+from ..models import (
+    Agent,
+    FilesystemEvents,
+    NetworkEvents,
+    PortSnapshots,
+    ProcessSnapshots,
+    ResourceSnapshots,
+    TelemetryEvents,
+)
 from ...schemas import TelemetryIngestRequest
 
 
@@ -13,6 +20,10 @@ from ...schemas import TelemetryIngestRequest
 class TelemetryWriteResult:
     event: TelemetryEvents
     resource_snapshot: ResourceSnapshots | None
+    stored_network_connections: int
+    stored_filesystem_events: int
+    stored_processes: int
+    stored_ports: int
 
 
 class TelemetryRepository:
@@ -26,6 +37,66 @@ class TelemetryRepository:
             payload_json=payload.model_dump(mode="json"),
         )
         self.session.add(event)
+
+        stored_network_connections = 0
+        if payload.network is not None:
+            network_events = [
+                NetworkEvents(
+                    agent_id=agent.id,
+                    direction=connection.direction,
+                    src_ip=str(connection.src_ip),
+                    dst_ip=str(connection.dst_ip) if connection.dst_ip is not None else None,
+                    port=connection.dst_port,
+                    protocol=connection.protocol,
+                    bytes=connection.bytes,
+                    timestamp=payload.timestamp,
+                )
+                for connection in payload.network.connections
+            ]
+            self.session.add_all(network_events)
+            stored_network_connections = len(network_events)
+
+        stored_filesystem_events = 0
+        if payload.filesystem is not None:
+            filesystem_events = [
+                FilesystemEvents(
+                    agent_id=agent.id,
+                    event_type=event_payload.type,
+                    path=event_payload.path,
+                    pid=event_payload.pid,
+                    process_name=event_payload.process,
+                    timestamp=event_payload.timestamp,
+                )
+                for event_payload in payload.filesystem.events
+            ]
+            self.session.add_all(filesystem_events)
+            stored_filesystem_events = len(filesystem_events)
+
+        port_snapshots = [
+            PortSnapshots(
+                agent_id=agent.id,
+                port=port.port,
+                protocol=port.protocol,
+                pid=port.pid,
+                process_name=port.process,
+                timestamp=payload.timestamp,
+            )
+            for port in payload.ports
+        ]
+        self.session.add_all(port_snapshots)
+
+        process_snapshots = [
+            ProcessSnapshots(
+                agent_id=agent.id,
+                pid=process.pid,
+                command=process.command,
+                user=process.user,
+                started_at=process.started,
+                timestamp=payload.timestamp,
+            )
+            for process in payload.processes
+        ]
+        self.session.add_all(process_snapshots)
 
         resource_snapshot = None
         if payload.resources is not None:
@@ -50,4 +121,8 @@ class TelemetryRepository:
         return TelemetryWriteResult(
             event=event,
             resource_snapshot=resource_snapshot,
+            stored_network_connections=stored_network_connections,
+            stored_filesystem_events=stored_filesystem_events,
+            stored_processes=len(process_snapshots),
+            stored_ports=len(port_snapshots),
         )
