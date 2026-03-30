@@ -32,4 +32,4 @@ Endpoints:
 - Server: `http://localhost:8001`
 - Postgres: `localhost:5432`
 
-The server uses the internal Docker hostname `db`, creates the `containerguard` database if it is missing, and then applies Alembic migrations on startup.
+`docker compose up --build` now runs a one-shot `migrate` service before the API starts. PostgreSQL creates the `containerguard` database during container initialization, and the FastAPI app no longer performs schema creation or migrations during startup.

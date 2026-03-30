@@ -5,24 +5,35 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_DB: containerguard
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d containerguard"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    build:
+      context: ./server
+    container_name: containerguard-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
+    command: ["alembic", "upgrade", "head"]
 
   server:
     build:
       context: ./server
     container_name: containerguard-server
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
     ports:

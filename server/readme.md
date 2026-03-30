@@ -8,7 +8,8 @@ docker run --rm -p 8000:8000 -e PG_DSN=postgresql+asyncpg://postgres:postgres@ho
 Notes:
 
 - `PG_DSN` is required. `DATABASE_URL` also works.
-- The container now starts with `gunicorn` and `uvicorn.workers.UvicornWorker`.
+- The container starts with `gunicorn` and `uvicorn.workers.UvicornWorker`.
+- Due to gunicorn uvicorn 1:many, removed the schema creation and migration from the startup and now is handled in deployment
 - Set `WEB_CONCURRENCY` to override the Gunicorn worker count. Default: `max(cpu_count, 2)`.
 - Set `PORT` if you need Gunicorn to bind somewhere other than `8000`.
 - Inside Docker, `localhost` means the server container, not your host machine.

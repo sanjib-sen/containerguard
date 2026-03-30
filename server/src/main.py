@@ -9,15 +9,13 @@ from .api.compliance import router as compliance_router
 from .api.scans import router as scans_router
 from .api.telemetry import router as telemetry_router
 from .api.websocket import router as websocket_router
-from .db import create_data_access_layer, dispose_engine, get_session_factory, initialize_database
+from .db import create_data_access_layer, dispose_engine, get_session_factory
 from .metrics.exporter import build_metrics_app, set_agent_counts
 from .workers import run_heartbeat_monitor
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # start up
-    await initialize_database()
     async with get_session_factory()() as session:
         dal = create_data_access_layer(session)
         total_agents = await dal.agents.count_all()
