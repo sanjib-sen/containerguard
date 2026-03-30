@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..db import DataAccessLayer, get_dal
@@ -9,7 +11,6 @@ router = APIRouter(
     tags=["telemetry"],
     responses={404: {"description": "Not found"}},
 )
-
 
 @router.post("", response_model=TelemetryIngestResponse, status_code=status.HTTP_201_CREATED)
 async def postTelemetry(payload: TelemetryIngestRequest, dal: DataAccessLayer = Depends(get_dal)):
@@ -56,22 +57,34 @@ async def postTelemetry(payload: TelemetryIngestRequest, dal: DataAccessLayer = 
         raw_payload=write_result.event.payload_json,
     )
 
-
 @router.get("/network")
-async def getNetwork():
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Network telemetry query is not implemented yet")
-
+async def getNetwork(dal: DataAccessLayer = Depends(get_dal)):
+    """get network events for all online agents in the last 24 hours
+    """
+    agent_ids = await dal.agents.list_online_agents()
+    if not agent_ids:
+        return []
+    network_events = await dal.telemetry.getNetworkEvents(agent_ids)
+    return network_events
 
 @router.get("/filesystem")
-async def getFilesystem():
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Filesystem telemetry query is not implemented yet")
-
+async def getFilesystem(dal: DataAccessLayer = Depends(get_dal)):
+    agent_ids = await dal.agents.list_online_agents()
+    if not agent_ids:
+        return []
+    filesystem_events = await dal.telemetry.getFilesystemEvents(agent_ids)
+    return filesystem_events
 
 @router.get("/resources")
-async def getResources():
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Resources telemetry query is not implemented yet")
-
+async def getResources(dal: DataAccessLayer = Depends(get_dal)):
+    agent_ids = await dal.agents.list_online_agents()
+    if not agent_ids:
+        return []
+    resource_snapshots = await dal.telemetry.getResourceSnapshots(agent_ids)
+    return resource_snapshots
 
 @router.get("/{agent_id}")
-async def getTelemetry(agent_id):
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Telemetry query is not implemented yet")
+async def getTelemetry(agent_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
+    agent = [agent_id]
+    telemetry_events = await dal.telemetry.getAll(agent)
+    return telemetry_events

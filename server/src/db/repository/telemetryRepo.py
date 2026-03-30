@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import (
@@ -126,3 +129,27 @@ class TelemetryRepository:
             stored_processes=len(process_snapshots),
             stored_ports=len(port_snapshots),
         )
+
+    async def getNetworkEvents(self, agent_ids: Sequence[UUID]) -> list[NetworkEvents]:
+        """get network events for all online agents in the last 24 hours"""
+        statement = select(NetworkEvents).where(NetworkEvents.agent_id.in_(agent_ids))
+        result = await self.session.scalars(statement)
+        return list(result)
+    
+    async def getFilesystemEvents(self, agent_ids: Sequence[UUID]) -> list[FilesystemEvents]:
+        """get filesystem events for all online agents in the last 24 hours"""
+        statement = select(FilesystemEvents).where(FilesystemEvents.agent_id.in_(agent_ids))
+        result = await self.session.scalars(statement)
+        return list(result)
+    
+    async def getResourceSnapshots(self, agent_ids: Sequence[UUID]) -> list[ResourceSnapshots]:
+        """get resource snapshots for all online agents in the last 24 hours"""
+        statement = select(ResourceSnapshots).where(ResourceSnapshots.agent_id.in_(agent_ids))
+        result = await self.session.scalars(statement)
+        return list(result)
+    
+    async def getAll(self, agent_ids: Sequence[UUID]) -> list[TelemetryEvents]:
+        """get all telemetry events for all online agents in the last 24 hours"""
+        statement = select(TelemetryEvents).where(TelemetryEvents.agent_id.in_(agent_ids))
+        result = await self.session.scalars(statement)
+        return list(result)
