@@ -16,6 +16,9 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("PG_DSN", "DATABASE_URL"),
     )
     pg_admin_db: str = "postgres"
+    heartbeat_monitor_interval_seconds: int = 5
+    heartbeat_unreachable_after_seconds: int = 10
+    heartbeat_offline_after_seconds: int = 60
 
 
 @lru_cache
