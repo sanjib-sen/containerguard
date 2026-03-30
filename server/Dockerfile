@@ -2,6 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp/containerguard-prometheus
+
 COPY pyproject.toml readme.md alembic.ini gunicorn.conf.py ./
 COPY alembic ./alembic
 COPY src ./src
