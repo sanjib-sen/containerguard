@@ -38,6 +38,11 @@ class AgentsRepository:
         statement = select(func.count()).select_from(Agent).where(Agent.status == status)
         result = await self.session.scalar(statement)
         return int(result or 0)
+    
+    async def list_online_agents(self) -> list[UUID]:
+        statement = select(Agent.id).where(Agent.status == "online")
+        result = await self.session.scalars(statement)
+        return list(result)
 
     async def sync_statuses(self, *, unreachable_after: timedelta, offline_after: timedelta) -> AgentStatusSyncResult:
         now = datetime.now(timezone.utc)
