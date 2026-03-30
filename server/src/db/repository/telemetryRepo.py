@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -130,26 +131,63 @@ class TelemetryRepository:
             stored_ports=len(port_snapshots),
         )
 
-    async def getNetworkEvents(self, agent_ids: Sequence[UUID]) -> list[NetworkEvents]:
-        """get network events for all online agents in the last 24 hours"""
-        statement = select(NetworkEvents).where(NetworkEvents.agent_id.in_(agent_ids))
+    async def getNetworkEvents(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[NetworkEvents]:
+        """Get network events for online agents within the requested window."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(NetworkEvents)
+            .where(
+                NetworkEvents.agent_id.in_(agent_ids),
+                NetworkEvents.timestamp >= cutoff,
+            )
+            .order_by(NetworkEvents.timestamp.desc())
+            .limit(limit)
+        )
         result = await self.session.scalars(statement)
         return list(result)
     
-    async def getFilesystemEvents(self, agent_ids: Sequence[UUID]) -> list[FilesystemEvents]:
-        """get filesystem events for all online agents in the last 24 hours"""
-        statement = select(FilesystemEvents).where(FilesystemEvents.agent_id.in_(agent_ids))
+    async def getFilesystemEvents(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[FilesystemEvents]:
+        """Get filesystem events for online agents within the requested window."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(FilesystemEvents)
+            .where(
+                FilesystemEvents.agent_id.in_(agent_ids),
+                FilesystemEvents.timestamp >= cutoff,
+            )
+            .order_by(FilesystemEvents.timestamp.desc())
+            .limit(limit)
+        )
         result = await self.session.scalars(statement)
         return list(result)
     
-    async def getResourceSnapshots(self, agent_ids: Sequence[UUID]) -> list[ResourceSnapshots]:
-        """get resource snapshots for all online agents in the last 24 hours"""
-        statement = select(ResourceSnapshots).where(ResourceSnapshots.agent_id.in_(agent_ids))
+    async def getResourceSnapshots(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[ResourceSnapshots]:
+        """Get resource snapshots for online agents within the requested window."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(ResourceSnapshots)
+            .where(
+                ResourceSnapshots.agent_id.in_(agent_ids),
+                ResourceSnapshots.timestamp >= cutoff,
+            )
+            .order_by(ResourceSnapshots.timestamp.desc())
+            .limit(limit)
+        )
         result = await self.session.scalars(statement)
         return list(result)
     
-    async def getAll(self, agent_ids: Sequence[UUID]) -> list[TelemetryEvents]:
-        """get all telemetry events for all online agents in the last 24 hours"""
-        statement = select(TelemetryEvents).where(TelemetryEvents.agent_id.in_(agent_ids))
+    async def getAll(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[TelemetryEvents]:
+        """Get raw telemetry events for agents within the requested window."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(TelemetryEvents)
+            .where(
+                TelemetryEvents.agent_id.in_(agent_ids),
+                TelemetryEvents.created_at >= cutoff,
+            )
+            .order_by(TelemetryEvents.created_at.desc())
+            .limit(limit)
+        )
         result = await self.session.scalars(statement)
         return list(result)
+

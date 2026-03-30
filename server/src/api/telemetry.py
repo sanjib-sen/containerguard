@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..db import DataAccessLayer, get_dal
 from ..metrics.exporter import record_telemetry_ingest, set_latest_resource_metrics
@@ -58,33 +58,35 @@ async def postTelemetry(payload: TelemetryIngestRequest, dal: DataAccessLayer = 
     )
 
 @router.get("/network")
-async def getNetwork(dal: DataAccessLayer = Depends(get_dal)):
-    """get network events for all online agents in the last 24 hours
-    """
+async def getNetwork(dal: DataAccessLayer = Depends(get_dal), hours: int = Query(default=24, ge=1, le=168), limit: int = Query(default=500, ge=1, le=5000)):
+    """Get network events for online agents within the requested window."""
     agent_ids = await dal.agents.list_online_agents()
     if not agent_ids:
         return []
-    network_events = await dal.telemetry.getNetworkEvents(agent_ids)
+    network_events = await dal.telemetry.getNetworkEvents(agent_ids, hours=hours, limit=limit)
     return network_events
 
 @router.get("/filesystem")
-async def getFilesystem(dal: DataAccessLayer = Depends(get_dal)):
+async def getFilesystem(dal: DataAccessLayer = Depends(get_dal), hours: int = Query(default=24, ge=1, le=168), limit: int = Query(default=500, ge=1, le=5000)):
+    """Get filesystem events for online agents within the requested window."""
     agent_ids = await dal.agents.list_online_agents()
     if not agent_ids:
         return []
-    filesystem_events = await dal.telemetry.getFilesystemEvents(agent_ids)
+    filesystem_events = await dal.telemetry.getFilesystemEvents(agent_ids, hours=hours, limit=limit)
     return filesystem_events
 
 @router.get("/resources")
-async def getResources(dal: DataAccessLayer = Depends(get_dal)):
+async def getResources(dal: DataAccessLayer = Depends(get_dal), hours: int = Query(default=24, ge=1, le=168), limit: int = Query(default=500, ge=1, le=5000)):
+    """Get resource snapshots for online agents within the requested window."""
     agent_ids = await dal.agents.list_online_agents()
     if not agent_ids:
         return []
-    resource_snapshots = await dal.telemetry.getResourceSnapshots(agent_ids)
+    resource_snapshots = await dal.telemetry.getResourceSnapshots(agent_ids, hours=hours, limit=limit)
     return resource_snapshots
 
 @router.get("/{agent_id}")
-async def getTelemetry(agent_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
+async def getTelemetry(agent_id: UUID, dal: DataAccessLayer = Depends(get_dal), hours: int = Query(default=24, ge=1, le=168), limit: int = Query(default=500, ge=1, le=5000)):
+    """Get raw telemetry events for a single agent within the requested window."""
     agent = [agent_id]
-    telemetry_events = await dal.telemetry.getAll(agent)
+    telemetry_events = await dal.telemetry.getAll(agent, hours=hours, limit=limit)
     return telemetry_events
