@@ -5,10 +5,11 @@ import logging
 from datetime import timedelta
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from ..config import get_settings
-from ..db import create_data_access_layer, get_session_factory
+from ..db import create_data_access_layer
+from ..db.session import get_engine
 from ..metrics.exporter import set_agent_counts
 
 
@@ -47,25 +48,25 @@ async def run_heartbeat_monitor() -> None:
 
     while True:
         try:
-            async with get_session_factory()() as session:
-                connection = await session.connection()
+            async with get_engine().connect() as connection:
                 if await _try_acquire_monitor_lock(connection):
-                    dal = create_data_access_layer(session)
                     try:
-                        sync_result = await dal.agents.sync_statuses(
-                            unreachable_after=unreachable_after,
-                            offline_after=offline_after,
-                        )
-                        set_agent_counts(
-                            total=sync_result.total_agents,
-                            online=sync_result.online_agents,
-                        )
-                        if sync_result.marked_unreachable or sync_result.marked_offline:
-                            logger.info(
-                                "heartbeat monitor updated agent states: unreachable=%s offline=%s",
-                                sync_result.marked_unreachable,
-                                sync_result.marked_offline,
+                        async with AsyncSession(bind=connection, expire_on_commit=False) as session:
+                            dal = create_data_access_layer(session)
+                            sync_result = await dal.agents.sync_statuses(
+                                unreachable_after=unreachable_after,
+                                offline_after=offline_after,
                             )
+                            set_agent_counts(
+                                total=sync_result.total_agents,
+                                online=sync_result.online_agents,
+                            )
+                            if sync_result.marked_unreachable or sync_result.marked_offline:
+                                logger.info(
+                                    "heartbeat monitor updated agent states: unreachable=%s offline=%s",
+                                    sync_result.marked_unreachable,
+                                    sync_result.marked_offline,
+                                )
                     finally:
                         await _release_monitor_lock(connection)
             await asyncio.sleep(monitor_interval)
