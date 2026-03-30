@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,26 +8,13 @@ from .api.compliance import router as compliance_router
 from .api.scans import router as scans_router
 from .api.telemetry import router as telemetry_router
 from .api.websocket import router as websocket_router
-from .db import create_data_access_layer, dispose_engine, get_session_factory
-from .metrics.exporter import build_metrics_app, set_agent_counts
-from .workers import run_heartbeat_monitor
+from .db import dispose_engine
+from .metrics.exporter import build_metrics_app
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    async with get_session_factory()() as session:
-        dal = create_data_access_layer(session)
-        total_agents = await dal.agents.count_all()
-        online_agents = await dal.agents.count_by_status("online")
-        set_agent_counts(total=total_agents, online=online_agents)
-    heartbeat_monitor_task = asyncio.create_task(run_heartbeat_monitor())
     yield
-    # shutdown
-    heartbeat_monitor_task.cancel()
-    try:
-        await heartbeat_monitor_task
-    except asyncio.CancelledError:
-        pass
     await dispose_engine()
 
 

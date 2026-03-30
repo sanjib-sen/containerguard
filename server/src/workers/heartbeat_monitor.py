@@ -75,3 +75,12 @@ async def run_heartbeat_monitor() -> None:
         except Exception:
             logger.exception("heartbeat monitor iteration failed")
             await asyncio.sleep(monitor_interval)
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(run_heartbeat_monitor())
+
+
+if __name__ == "__main__":
+    main()

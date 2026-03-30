@@ -36,8 +36,26 @@ services:
         condition: service_completed_successfully
     environment:
       PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
+      PROMETHEUS_MULTIPROC_DIR: /tmp/containerguard-prometheus
     ports:
       - "8001:8000"
+    volumes:
+      - prometheus_multiproc:/tmp/containerguard-prometheus
+
+  heartbeat-monitor:
+    build:
+      context: ./server
+    container_name: containerguard-heartbeat-monitor
+    depends_on:
+      server:
+        condition: service_started
+    environment:
+      PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
+      PROMETHEUS_MULTIPROC_DIR: /tmp/containerguard-prometheus
+    command: ["python", "-m", "src.workers.heartbeat_monitor"]
+    volumes:
+      - prometheus_multiproc:/tmp/containerguard-prometheus
 
 volumes:
   postgres_data:
+  prometheus_multiproc:

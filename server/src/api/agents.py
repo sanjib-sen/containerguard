@@ -4,7 +4,6 @@ from ..db import DataAccessLayer, get_dal
 from ..metrics.exporter import (
     record_agent_heartbeat,
     record_agent_register,
-    set_agent_counts,
 )
 from ..schemas import (
     AgentHeartbeatRequest,
@@ -30,10 +29,7 @@ async def postRegister(payload: AgentRegisterRequest, dal: DataAccessLayer = Dep
         image=payload.image,
         ip=str(payload.ip) if payload.ip is not None else None,
     )
-    total_agents = await dal.agents.count_all()
-    online_agents = await dal.agents.count_by_status("online")
     record_agent_register()
-    set_agent_counts(total=total_agents, online=online_agents)
     return AgentResponse.model_validate(agent)
 
 
@@ -45,10 +41,7 @@ async def postHeartbeat(payload: AgentHeartbeatRequest, dal: DataAccessLayer = D
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Agent not found",
         )
-    total_agents = await dal.agents.count_all()
-    online_agents = await dal.agents.count_by_status("online")
     record_agent_heartbeat()
-    set_agent_counts(total=total_agents, online=online_agents)
     return AgentHeartbeatResponse(
         agent_id=agent.id,
         status=agent.status,
