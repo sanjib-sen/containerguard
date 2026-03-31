@@ -2,7 +2,7 @@
 
 **Container Security Monitoring and Compliance Platform**
 
-Course: COSC 6352 - Advanced Operating Systems, University of Houston
+Course: COSC 6352 - Advanced Operating Systems, Texas A&M at Corpus Christi
 Professor: Bozhen Liu
 
 ContainerGuard is a distributed monitoring platform that provides real-time visibility into container security posture. It consists of lightweight agents deployed inside containers, a central server that aggregates telemetry, a web dashboard for visualization, and a full observability stack (Prometheus, Grafana, Loki).
