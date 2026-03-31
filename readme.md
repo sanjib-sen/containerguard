@@ -14,26 +14,40 @@ ContainerGuard is a distributed monitoring platform that provides real-time visi
 ### Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Docker Engine 24+ with Compose V2)
-- Ports available: `3001`, `3002`, `3100`, `5432`, `8001`, `9090`
+- Ports available: `3001`, `3002`, `3100`, `5432`, `8001`, `8080`, `9090`
 
-### Launch
+### Launch Everything (one command)
 
 ```bash
 docker compose up --build -d
 ```
 
-This starts all 9 services. First run takes 2-3 minutes to pull images and build. Subsequent starts are faster.
+This starts all 13 services including 2 demo workloads and 3 monitoring agents. First run takes 2-3 minutes to pull images and build.
 
 ### Access Points
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **Dashboard** | http://localhost:3002 | React web UI |
-| **Grafana** | http://localhost:3001 | Metrics + Logs (admin/admin) |
+| **Dashboard** | http://localhost:3002 | React web UI — Overview, Agents, Network, Logs |
+| **Grafana** | http://localhost:3001 | Metrics + Logs visualization (admin / admin) |
 | **Server API** | http://localhost:8001 | FastAPI + Swagger docs at `/docs` |
+| **Demo Web API** | http://localhost:8080 | Sample microservice being monitored |
 | **Prometheus** | http://localhost:9090 | Metrics query UI |
 | **Loki** | http://localhost:3100 | Log query API |
-| **PostgreSQL** | localhost:5432 | DB (postgres/postgres/containerguard) |
+| **PostgreSQL** | localhost:5432 | Database (postgres / postgres / containerguard) |
+
+### What You'll See
+
+After ~30 seconds, the dashboard at http://localhost:3002 will show:
+- **3 agents online**: `demo-standalone`, `web-api`, `bg-worker`
+- **Live CPU/memory charts** updating every 10-15 seconds per agent
+- **Network connections** from demo outbound HTTP calls
+- **Logs** from all containers streaming in real-time
+
+In Grafana at http://localhost:3001:
+- Use the **Agent** dropdown at the top to filter all charts to a specific agent
+- Use the **Log Service** dropdown to filter logs by service
+- Scroll down to see the log panels
 
 ### Stop
 
@@ -45,6 +59,19 @@ To also remove stored data (DB, metrics, logs):
 
 ```bash
 docker compose down -v
+```
+
+### Start Individual Components
+
+```bash
+# Platform only (no demo workloads)
+docker compose up -d db migrate server heartbeat-monitor dashboard prometheus loki promtail grafana agent
+
+# Add demo workloads
+docker compose up -d demo-web-api demo-worker agent-web-api agent-worker
+
+# Just the observability stack
+docker compose up -d prometheus loki promtail grafana
 ```
 
 ---
@@ -81,7 +108,9 @@ docker compose down -v
                 └─────────┘
 ```
 
-### Services (9 total)
+### Services (13 total)
+
+**Platform:**
 
 | Service | Image | Role |
 |---------|-------|------|
@@ -89,12 +118,26 @@ docker compose down -v
 | **migrate** | Built from `server/` | One-shot Alembic migration runner |
 | **server** | Built from `server/` | FastAPI API gateway + WebSocket + Prometheus exporter |
 | **heartbeat-monitor** | Built from `server/` | Independent worker that marks agents unreachable/offline |
-| **agent** | Built from `agent/` | Collects container telemetry and pushes to server |
 | **dashboard** | Built from `dashboard/` | React SPA served by Nginx with API reverse proxy |
+
+**Observability:**
+
+| Service | Image | Role |
+|---------|-------|------|
 | **prometheus** | `prom/prometheus` | Time-series metrics storage, scrapes server `/metrics/` |
 | **loki** | `grafana/loki:3.4.2` | Log aggregation store |
 | **promtail** | `grafana/promtail:3.4.2` | Collects Docker container logs, ships to Loki |
 | **grafana** | `grafana/grafana` | Visualization for metrics (Prometheus) and logs (Loki) |
+
+**Agents + Demo Workloads:**
+
+| Service | Hostname | Monitors | Description |
+|---------|----------|----------|-------------|
+| **agent** | `demo-standalone` | Itself | Standalone agent demo |
+| **demo-web-api** | — | — | Sample FastAPI microservice (outbound calls, file I/O, compute) |
+| **agent-web-api** | `web-api` | demo-web-api | Sidecar agent monitoring the web API (shared PID + network namespace) |
+| **demo-worker** | — | — | Sample background worker (CPU hashing, disk I/O, network, DNS) |
+| **agent-worker** | `bg-worker` | demo-worker | Sidecar agent monitoring the worker (shared PID + network namespace) |
 
 ---
 
@@ -191,6 +234,14 @@ containerguard/
 │       └── dashboards/
 │           ├── dashboards.yml      # Dashboard provider config
 │           └── container-guard.json # Pre-built dashboard (13 panels, 2 variables)
+│
+├── demo/                           # Demo workloads for testing
+│   ├── web-api/
+│   │   ├── Dockerfile
+│   │   └── app.py                  # FastAPI service with background tasks
+│   └── worker/
+│       ├── Dockerfile
+│       └── worker.py               # CPU, disk I/O, network, DNS workload
 │
 └── project-details.md              # Full system design document
 ```
@@ -382,22 +433,50 @@ npm run dev
 # Accessible at http://localhost:5173, proxies API to localhost:8001
 ```
 
-### Adding a New Agent
+### Adding a New Agent to Monitor a Container
 
-To monitor an additional container, add another agent service in `docker-compose.yml`:
+To monitor an additional container with a sidecar agent, add two services to `docker-compose.yml`:
 
 ```yaml
-  agent-redis:
+  # Your container
+  my-service:
+    image: my-image:latest
+    container_name: my-service
+
+  # Agent sidecar (shares PID + network namespace with your container)
+  agent-my-service:
     build:
       context: ./agent
-    hostname: redis-cache
+    pid: "service:my-service"
+    network_mode: "service:my-service"
     depends_on:
       server:
         condition: service_started
+      my-service:
+        condition: service_started
     environment:
       SERVER_URL: http://containerguard-server:8000
-      IMAGE: "redis:7"
-      CONTAINER_ID: containerguard-agent-redis
+      HOSTNAME: my-service-name      # Human-readable name shown in dashboards
+      IMAGE: "my-image:latest"
+      CONTAINER_ID: my-service       # Matches Docker container name for log correlation
+```
+
+The `pid` and `network_mode` settings share the target container's PID and network namespace, so the agent sees its processes, ports, and connections.
+
+### Demo Services
+
+Two demo workloads are included for testing:
+
+| Service | Port | What it does |
+|---------|------|-------------|
+| **demo-web-api** | 8080 | FastAPI app that handles requests, makes outbound HTTP calls, writes temp files, runs compute tasks |
+| **demo-worker** | — | Background Python worker doing CPU hashing, heavy disk I/O, network POSTs, DNS lookups |
+
+Hit the web API to generate more telemetry:
+```bash
+curl http://localhost:8080/          # Health check
+curl http://localhost:8080/compute   # CPU-intensive task
+curl http://localhost:8080/data      # Writes a JSON file
 ```
 
 ### DB Verification
