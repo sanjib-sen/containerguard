@@ -37,6 +37,7 @@ services:
     environment:
       PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
       PROMETHEUS_MULTIPROC_DIR: /tmp/containerguard-prometheus
+      LOKI_URL: http://loki:3100
     ports:
       - "8001:8000"
     volumes:
@@ -56,6 +57,88 @@ services:
     volumes:
       - prometheus_multiproc:/tmp/containerguard-prometheus
 
+  agent:
+    build:
+      context: ./agent
+    container_name: containerguard-agent
+    hostname: demo-web-app
+    depends_on:
+      server:
+        condition: service_started
+    environment:
+      SERVER_URL: http://containerguard-server:8000
+      IMAGE: "demo-workload:latest"
+      CONTAINER_ID: containerguard-agent
+      TELEMETRY_INTERVAL_SECONDS: 15
+      HEARTBEAT_INTERVAL_SECONDS: 5
+
+  dashboard:
+    build:
+      context: ./dashboard
+    container_name: containerguard-dashboard
+    depends_on:
+      server:
+        condition: service_started
+    ports:
+      - "3002:80"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: containerguard-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: containerguard-loki
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --output-document=- http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    container_name: containerguard-promtail
+    depends_on:
+      loki:
+        condition: service_healthy
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: containerguard-grafana
+    depends_on:
+      - prometheus
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/dashboards/container-guard.json:/var/lib/grafana/dashboards/container-guard.json:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+
 volumes:
   postgres_data:
   prometheus_multiproc:
+  prometheus_data:
+  loki_data:
+  grafana_data:

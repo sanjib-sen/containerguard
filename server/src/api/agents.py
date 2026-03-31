@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..db import DataAccessLayer, get_dal
@@ -48,18 +50,27 @@ async def postHeartbeat(payload: AgentHeartbeatRequest, dal: DataAccessLayer = D
         last_heartbeat=agent.last_heartbeat,
     )
 
-@router.get("/")
-async def getAgents():
-    pass
+@router.get("/", response_model=list[AgentResponse])
+async def getAgents(dal: DataAccessLayer = Depends(get_dal)):
+    agents = await dal.agents.list_all()
+    return [AgentResponse.model_validate(a) for a in agents]
 
-@router.get("/{id}")
-async def getAgent(id):
-    pass
+@router.get("/{agent_id}", response_model=AgentResponse)
+async def getAgent(agent_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
+    agent = await dal.agents.get_by_id(agent_id)
+    if agent is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
+    return AgentResponse.model_validate(agent)
 
-@router.get("/{id}/config")
-async def getAgentId():
-    pass
+@router.get("/{agent_id}/config")
+async def getAgentConfig(agent_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
+    agent = await dal.agents.get_by_id(agent_id)
+    if agent is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
+    return {"agent_id": str(agent.id), "collection_interval_seconds": 15}
 
-@router.delete("/{id}")
-async def deleteAgent():
-    pass
+@router.delete("/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deleteAgent(agent_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
+    deleted = await dal.agents.delete_agent(agent_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")

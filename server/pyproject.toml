@@ -13,6 +13,8 @@ dependencies = [
     "pydantic-settings",
     "gunicorn",
     "uvicorn",
+    "websockets",
+    "httpx",
     "prometheus_client"
 ]
 readme = "readme.md"

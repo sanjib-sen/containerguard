@@ -435,27 +435,40 @@ container-guard/
 
 ## 10. Implementation Plan & Milestones
 
-### Milestone 1: Foundation (Weeks 1-3) -- Proposal Checkpoint
+### Milestone 1: Foundation (Weeks 1-3) -- Proposal Checkpoint  ✅ COMPLETE
 - [x] System design document
-- [ ] Project scaffolding (monorepo, Docker Compose, CI)
-- [ ] Agent: resource collector (CPU, memory, network I/O via psutil)
+- [x] Project scaffolding (monorepo, Docker Compose, CI)
+- [x] Agent: resource collector (CPU, memory, network I/O via psutil)
 - [x] Server: FastAPI skeleton, agent registration, heartbeat
 - [x] Database schema + migrations (Alembic)
-- [ ] Agent -> Server telemetry push (basic)
-- [ ] Prometheus exporter with basic metrics
+- [x] Agent -> Server telemetry push (basic)
+- [x] Prometheus exporter with basic metrics
 - **Deliverable**: Agent reports CPU/memory to server; visible in Prometheus
 
-### Milestone 2: Core Monitoring (Weeks 4-6) -- Midterm Checkpoint
-- [ ] Agent: network connection tracker (inbound/outbound)
-- [ ] Agent: port scanner (open ports)
-- [ ] Agent: file access monitor (watchdog)
-- [ ] Agent: process enumerator
-- [x] Server: telemetry storage in PostgreSQL
-- [ ] Server: REST API for querying telemetry
-- [ ] Server: WebSocket broadcast for real-time data
-- [ ] Dashboard: basic container list + resource charts
-- [ ] Grafana dashboard with all metrics
+### Milestone 2: Core Monitoring (Weeks 4-6) -- Midterm Checkpoint  ✅ COMPLETE
+- [x] Agent: network connection tracker (inbound/outbound)
+- [x] Agent: port scanner (open ports with PID resolution)
+- [x] Agent: file access monitor (watchdog on /etc, /var/log, /tmp)
+- [x] Agent: process enumerator
+- [x] Server: telemetry storage in PostgreSQL (6 normalized tables)
+- [x] Server: REST API for querying telemetry (global + per-agent endpoints)
+- [x] Server: WebSocket broadcast for real-time data
+- [x] Dashboard: Overview page with aggregate stats, top-N charts, agent table
+- [x] Dashboard: Agent detail page with per-agent charts, network, fs, processes, ports tabs
+- [x] Dashboard: Searchable/filterable agent list
+- [x] Dashboard: Network activity view
+- [x] Grafana dashboard with all metrics + per-agent dropdown filter
 - **Deliverable**: Full telemetry pipeline working; live dashboard
+
+### Bonus: Log Infrastructure  ✅ COMPLETE
+- [x] Loki log aggregation store
+- [x] Promtail auto-discovery of Docker container logs
+- [x] Server log proxy API (LogQL query forwarding)
+- [x] Dashboard: Global log viewer with service/container/level filters
+- [x] Dashboard: Per-agent log tab in agent detail page
+- [x] Grafana: Loki datasource + log panels with service filter variable
+- [x] Agent: Rich demo logging (security events, outbound network calls)
+- **Deliverable**: Full log pipeline from containers -> Loki -> Grafana + Dashboard
 
 ### Milestone 3: Security Features (Weeks 7-9)
 - [ ] Vulnerability scanning via Trivy integration
@@ -466,11 +479,11 @@ container-guard/
 - **Deliverable**: Scan an image, evaluate compliance, trigger alerts
 
 ### Milestone 4: Polish & Demo (Weeks 10-12) -- Final Demo
-- [ ] Dashboard: full UI (network view, alerts, compliance, scans)
+- [x] Dashboard: full UI (network view, alerts, compliance, scans pages)
 - [ ] Agent ring buffer for offline resilience
 - [ ] Demo scenario: deploy vulnerable containers, show detection
 - [ ] Performance tuning and load testing
-- [ ] Documentation and project report
+- [x] Documentation and project report
 - **Deliverable**: End-to-end demo with multiple containers
 
 ---

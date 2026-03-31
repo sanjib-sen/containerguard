@@ -1,24 +1,50 @@
-## Backend
+## Central Server
 
-#### Docker Setup
+FastAPI backend that receives agent telemetry, stores it in PostgreSQL, exposes Prometheus metrics, proxies Loki logs, and broadcasts real-time updates via WebSocket.
 
-docker build -t containerguard-server ./server
-docker run --rm -p 8000:8000 -e PG_DSN=postgresql+asyncpg://postgres:postgres@host.docker.internal:5432/containerguard containerguard-server
+### Running with Docker Compose (recommended)
 
-Notes:
+From the repo root:
 
-- `PG_DSN` is required. `DATABASE_URL` also works.
-- The container starts with `gunicorn` and `uvicorn.workers.UvicornWorker`.
-- Due to gunicorn uvicorn 1:many, removed the schema creation and migration from the startup and now is handled in deployment
-- Set `WEB_CONCURRENCY` to override the Gunicorn worker count. Default: `max(cpu_count, 2)`.
-- Set `PORT` if you need Gunicorn to bind somewhere other than `8000`.
-- Inside Docker, `localhost` means the server container, not your host machine.
-- If PostgreSQL is running in another container, put both containers on the same Docker network and use the Postgres container name as the host.
-
-Recommended local development flow from the repo root:
-
+```bash
 docker compose up --build
+```
 
-#### DB verification
+This starts PostgreSQL, runs Alembic migrations, and starts the server with Gunicorn multi-worker.
 
-for verification you can connect to the DB via DBeaver or alternative via, localhost:5432/containerguard postgres:postgres
+### Running standalone
+
+```bash
+cd server
+pip install -e .
+export PG_DSN=postgresql+asyncpg://postgres:postgres@localhost:5432/containerguard
+alembic upgrade head
+gunicorn -c gunicorn.conf.py src.main:app
+```
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PG_DSN` | Yes | — | PostgreSQL async connection string |
+| `LOKI_URL` | No | — | Loki URL for log proxy endpoints |
+| `PROMETHEUS_MULTIPROC_DIR` | No | `/tmp/containerguard-prometheus` | Prometheus multiprocess dir |
+| `WEB_CONCURRENCY` | No | `max(cpu_count, 2)` | Gunicorn worker count |
+| `PORT` | No | `8000` | Bind port |
+
+### API Docs
+
+Interactive Swagger UI: http://localhost:8001/docs
+
+### Database
+
+- PostgreSQL 16, database `containerguard`
+- Migrations managed by Alembic in `alembic/versions/`
+- Connect for verification: `localhost:5432`, user `postgres`, password `postgres`
+
+### Architecture Notes
+
+- **Gunicorn + Uvicorn workers**: Multi-process for production; Prometheus multiprocess mode shares metrics via a shared volume
+- **Heartbeat Monitor**: Runs as a separate container (not inside the API workers) to avoid lock/race conditions across workers
+- **Migrations**: Run by a one-shot `migrate` service in Docker Compose before the server starts
+- **WebSocket**: `/ws/dashboard` broadcasts telemetry on every ingest; `/ws/alerts` reserved for alert broadcast
