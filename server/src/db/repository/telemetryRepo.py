@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import (
@@ -131,63 +131,128 @@ class TelemetryRepository:
             stored_ports=len(port_snapshots),
         )
 
+    # ── Global queries (for overview) ──
+
     async def getNetworkEvents(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[NetworkEvents]:
-        """Get network events for online agents within the requested window."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         statement = (
             select(NetworkEvents)
-            .where(
-                NetworkEvents.agent_id.in_(agent_ids),
-                NetworkEvents.timestamp >= cutoff,
-            )
+            .where(NetworkEvents.agent_id.in_(agent_ids), NetworkEvents.timestamp >= cutoff)
             .order_by(NetworkEvents.timestamp.desc())
             .limit(limit)
         )
         result = await self.session.scalars(statement)
         return list(result)
-    
+
     async def getFilesystemEvents(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[FilesystemEvents]:
-        """Get filesystem events for online agents within the requested window."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         statement = (
             select(FilesystemEvents)
-            .where(
-                FilesystemEvents.agent_id.in_(agent_ids),
-                FilesystemEvents.timestamp >= cutoff,
-            )
+            .where(FilesystemEvents.agent_id.in_(agent_ids), FilesystemEvents.timestamp >= cutoff)
             .order_by(FilesystemEvents.timestamp.desc())
             .limit(limit)
         )
         result = await self.session.scalars(statement)
         return list(result)
-    
+
     async def getResourceSnapshots(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[ResourceSnapshots]:
-        """Get resource snapshots for online agents within the requested window."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         statement = (
             select(ResourceSnapshots)
-            .where(
-                ResourceSnapshots.agent_id.in_(agent_ids),
-                ResourceSnapshots.timestamp >= cutoff,
-            )
+            .where(ResourceSnapshots.agent_id.in_(agent_ids), ResourceSnapshots.timestamp >= cutoff)
             .order_by(ResourceSnapshots.timestamp.desc())
             .limit(limit)
         )
         result = await self.session.scalars(statement)
         return list(result)
-    
+
     async def getAll(self, agent_ids: Sequence[UUID], *, hours: int = 24, limit: int = 500) -> list[TelemetryEvents]:
-        """Get raw telemetry events for agents within the requested window."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         statement = (
             select(TelemetryEvents)
-            .where(
-                TelemetryEvents.agent_id.in_(agent_ids),
-                TelemetryEvents.created_at >= cutoff,
-            )
+            .where(TelemetryEvents.agent_id.in_(agent_ids), TelemetryEvents.created_at >= cutoff)
             .order_by(TelemetryEvents.created_at.desc())
             .limit(limit)
         )
         result = await self.session.scalars(statement)
         return list(result)
 
+    async def getLatestResourcePerAgent(self) -> list[ResourceSnapshots]:
+        """Return the single most recent resource snapshot for every agent."""
+        subq = (
+            select(
+                ResourceSnapshots.agent_id,
+                func.max(ResourceSnapshots.timestamp).label("max_ts"),
+            )
+            .group_by(ResourceSnapshots.agent_id)
+            .subquery()
+        )
+        statement = (
+            select(ResourceSnapshots)
+            .join(
+                subq,
+                and_(
+                    ResourceSnapshots.agent_id == subq.c.agent_id,
+                    ResourceSnapshots.timestamp == subq.c.max_ts,
+                ),
+            )
+        )
+        result = await self.session.scalars(statement)
+        return list(result)
+
+    # ── Per-agent queries ──
+
+    async def getAgentResources(self, agent_id: UUID, *, hours: int = 24, limit: int = 500) -> list[ResourceSnapshots]:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(ResourceSnapshots)
+            .where(ResourceSnapshots.agent_id == agent_id, ResourceSnapshots.timestamp >= cutoff)
+            .order_by(ResourceSnapshots.timestamp.desc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(statement)
+        return list(result)
+
+    async def getAgentNetwork(self, agent_id: UUID, *, hours: int = 24, limit: int = 500) -> list[NetworkEvents]:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(NetworkEvents)
+            .where(NetworkEvents.agent_id == agent_id, NetworkEvents.timestamp >= cutoff)
+            .order_by(NetworkEvents.timestamp.desc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(statement)
+        return list(result)
+
+    async def getAgentFilesystem(self, agent_id: UUID, *, hours: int = 24, limit: int = 500) -> list[FilesystemEvents]:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(FilesystemEvents)
+            .where(FilesystemEvents.agent_id == agent_id, FilesystemEvents.timestamp >= cutoff)
+            .order_by(FilesystemEvents.timestamp.desc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(statement)
+        return list(result)
+
+    async def getAgentProcesses(self, agent_id: UUID, *, hours: int = 1, limit: int = 200) -> list[ProcessSnapshots]:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(ProcessSnapshots)
+            .where(ProcessSnapshots.agent_id == agent_id, ProcessSnapshots.timestamp >= cutoff)
+            .order_by(ProcessSnapshots.timestamp.desc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(statement)
+        return list(result)
+
+    async def getAgentPorts(self, agent_id: UUID, *, hours: int = 1, limit: int = 200) -> list[PortSnapshots]:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = (
+            select(PortSnapshots)
+            .where(PortSnapshots.agent_id == agent_id, PortSnapshots.timestamp >= cutoff)
+            .order_by(PortSnapshots.timestamp.desc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(statement)
+        return list(result)

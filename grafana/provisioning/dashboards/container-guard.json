@@ -1,0 +1,251 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "templating": {
+    "list": [
+      {
+        "name": "hostname",
+        "label": "Agent",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "query": "label_values(containerguard_agent_cpu_percent, hostname)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": false,
+        "current": { "text": "All", "value": "$__all" },
+        "allValue": ".+"
+      },
+      {
+        "name": "log_service",
+        "label": "Log Service",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+        "query": "label_values(service)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": false,
+        "current": { "text": "All", "value": "$__all" },
+        "allValue": ".+"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Agents Online",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "containerguard_agents_online",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Total Agents",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "containerguard_agents_total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "thresholds": { "steps": [{ "color": "blue", "value": null }] } },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Telemetry Ingestion Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(containerguard_telemetry_ingests_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "thresholds": { "steps": [{ "color": "purple", "value": null }] } },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Heartbeat Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(containerguard_agent_heartbeats_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "thresholds": { "steps": [{ "color": "orange", "value": null }] } },
+        "overrides": []
+      }
+    },
+    {
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "containerguard_agent_cpu_percent{hostname=~\"$hostname\"}",
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "min": 0, "max": 100 },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Memory Usage (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "containerguard_agent_memory_mb{hostname=~\"$hostname\"}",
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "decmbytes" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Network Bytes Sent",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "containerguard_agent_net_bytes_sent{hostname=~\"$hostname\"}",
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "decbytes" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Network Bytes Received",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "containerguard_agent_net_bytes_recv{hostname=~\"$hostname\"}",
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "decbytes" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Disk Read Bytes",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "containerguard_agent_disk_read_bytes{hostname=~\"$hostname\"}",
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "decbytes" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Disk Write Bytes",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "containerguard_agent_disk_write_bytes{hostname=~\"$hostname\"}",
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "decbytes" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Network Events Stored (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(containerguard_network_events_stored_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Filesystem Events Stored (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(containerguard_filesystem_events_stored_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Container Logs",
+      "type": "logs",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 36 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "expr": "{service=~\"$log_service\"}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["containerguard"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "ContainerGuard",
+  "uid": "containerguard-main"
+}

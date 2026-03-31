@@ -22,6 +22,19 @@ class AgentsRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def list_all(self) -> list[Agent]:
+        statement = select(Agent).order_by(Agent.registered_at.desc())
+        result = await self.session.scalars(statement)
+        return list(result)
+
+    async def delete_agent(self, agent_id: UUID) -> bool:
+        agent = await self.get_by_id(agent_id)
+        if agent is None:
+            return False
+        await self.session.delete(agent)
+        await self.session.commit()
+        return True
+
     async def get_by_container_id(self, container_id: str) -> Agent | None:
         statement = select(Agent).where(Agent.container_id == container_id)
         return await self.session.scalar(statement)

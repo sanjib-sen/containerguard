@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("PG_DSN", "DATABASE_URL"),
     )
+    loki_url: str | None = None
     heartbeat_monitor_interval_seconds: int = 5
     heartbeat_unreachable_after_seconds: int = 10
     heartbeat_offline_after_seconds: int = 60
