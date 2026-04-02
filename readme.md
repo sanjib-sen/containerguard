@@ -23,6 +23,7 @@ The agent is meant to run inside the workload container it is monitoring.
 The main compose file, `docker-compose.yml`, starts only the central stack:
 
 - PostgreSQL
+- Redis
 - migration job
 - API server
 - heartbeat worker
@@ -31,6 +32,8 @@ The main compose file, `docker-compose.yml`, starts only the central stack:
 - Loki
 - Promtail
 - Grafana
+
+Redis is used as the server's WebSocket fan-out layer so live dashboard updates work correctly with multiple Gunicorn workers.
 
 Demo workloads live in a separate compose file, `docker-compose.demos.yml`.
 
@@ -151,9 +154,12 @@ Server:
 cd server
 pip install -e .
 $env:PG_DSN="postgresql+asyncpg://postgres:postgres@localhost:5432/containerguard"
+$env:REDIS_URL="redis://localhost:6379/0"
 alembic upgrade head
 gunicorn -c gunicorn.conf.py src.main:app
 ```
+
+That standalone server flow also requires a reachable local Redis instance.
 
 Agent:
 
