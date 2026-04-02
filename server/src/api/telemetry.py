@@ -4,8 +4,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, s
 
 from ..db import DataAccessLayer, get_dal
 from ..metrics.exporter import record_telemetry_ingest, set_latest_resource_metrics
+from ..realtime import broker
 from ..schemas import TelemetryIngestRequest, TelemetryIngestResponse
-from .websocket import manager
 
 router = APIRouter(
     prefix="/telemetry",
@@ -42,7 +42,7 @@ async def postTelemetry(payload: TelemetryIngestRequest, background_tasks: Backg
         )
 
     background_tasks.add_task(
-        manager.broadcast_dashboard,
+        broker.publish_dashboard,
         {
             "type": "telemetry",
             "agent_id": str(agent.id),
