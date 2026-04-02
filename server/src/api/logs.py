@@ -24,7 +24,7 @@ async def queryLogs(
     limit: int = Query(default=200, ge=1, le=5000),
     start: str | None = Query(default=None, description="RFC3339 or Unix nanoseconds"),
     end: str | None = Query(default=None, description="RFC3339 or Unix nanoseconds"),
-    direction: str = Query(default="backward", regex="^(forward|backward)$"),
+    direction: str = Query(default="backward", pattern="^(forward|backward)$"),
 ):
     """Proxy log queries to Loki's query_range endpoint."""
     base = _loki_url()
