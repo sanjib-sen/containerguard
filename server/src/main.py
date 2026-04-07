@@ -11,11 +11,14 @@ from .api.telemetry import router as telemetry_router
 from .api.websocket import router as websocket_router
 from .db import dispose_engine
 from .metrics.exporter import build_metrics_app
+from .realtime import broker
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    await broker.start()
     yield
+    await broker.stop()
     await dispose_engine()
 
 

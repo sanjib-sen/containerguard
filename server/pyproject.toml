@@ -15,6 +15,7 @@ dependencies = [
     "uvicorn",
     "websockets",
     "httpx",
-    "prometheus_client"
+    "prometheus_client",
+    "redis>=5.0",
 ]
 readme = "readme.md"
