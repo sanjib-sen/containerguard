@@ -30,7 +30,14 @@ services:
       PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
     command: ["alembic", "upgrade", "head"]
 
-  # ─── ContainerGuard Platform ───────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: containerguard-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   server:
     build:
@@ -39,10 +46,13 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     environment:
       PG_DSN: postgresql+asyncpg://postgres:postgres@db:5432/containerguard
       PROMETHEUS_MULTIPROC_DIR: /tmp/containerguard-prometheus
       LOKI_URL: http://loki:3100
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8001:8000"
     volumes:

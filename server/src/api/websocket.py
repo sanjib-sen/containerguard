@@ -1,13 +1,4 @@
-from __future__ import annotations
-
-import asyncio
-import json
-import logging
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/ws",
