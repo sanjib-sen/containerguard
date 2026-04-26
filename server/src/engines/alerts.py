@@ -166,13 +166,18 @@ class AlertEngine:
             if existed is None:
                 return None
 
+        # Always include agent context in metadata
+        enriched_metadata = dict(metadata or {})
+        enriched_metadata.setdefault("hostname", agent.hostname)
+        enriched_metadata.setdefault("container_id", agent.container_id)
+
         alert = await repo.create_alert(
             agent_id=agent.id,
             rule_id=rule_id,
             rule_name=rule_name,
             severity=severity,
             message=message,
-            alert_metadata=metadata,
+            alert_metadata=enriched_metadata,
         )
         logger.info("alert fired: %s", message)
         record_alert_fired(severity, rule_name)
