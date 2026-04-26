@@ -3,6 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 
 from ..db import DataAccessLayer, get_dal
+from ..engines.alerts import alert_engine
+from ..engines.anomaly import anomaly_engine
+from ..engines.compliance import compliance_engine
 from ..metrics.exporter import record_telemetry_ingest, set_latest_resource_metrics
 from ..realtime import broker
 from ..schemas import TelemetryIngestRequest, TelemetryIngestResponse
@@ -56,6 +59,13 @@ async def postTelemetry(payload: TelemetryIngestRequest, background_tasks: Backg
             "ports": write_result.stored_ports,
         },
     )
+
+    # Run security engines: alert thresholds, anomaly detection, compliance
+    if payload.resources is not None:
+        await alert_engine.evaluate_resources(agent, payload.resources, dal.alerts)
+        await anomaly_engine.evaluate(agent, payload.resources, dal.alerts)
+
+    await compliance_engine.evaluate(agent, payload, dal.compliance, dal.alerts)
 
     return TelemetryIngestResponse(
         event_id=write_result.event.id,

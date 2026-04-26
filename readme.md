@@ -9,12 +9,14 @@ Developed by [sanjib](https://github.com/sanjib-sen), [Jackson](https://github.c
 ## Repo Layout
 
 - `agent/` - Python agent and collectors
-- `server/` - FastAPI API, database layer, migrations, metrics, and heartbeat worker
-- `dashboard/` - React frontend
+- `server/` - FastAPI API, DB layer, migrations, metrics, heartbeat worker, security engines
+  - `src/engines/` - alert manager, anomaly detection (Z-score), compliance engine, Trivy scanner
+- `dashboard/` - React frontend (Overview, Agents, Alerts, Compliance, Scans, Logs)
 - `demos/basic-app/` - example workload with the app and agent in the same container
 - `docker-compose.yml` - central stack
 - `docker-compose.demos.yml` - demo workloads
 - `prometheus/`, `loki/`, `promtail/`, `grafana/` - observability configuration
+- `scripts/` - seed-rules and e2e test scripts
 
 ## Architecture
 
@@ -33,10 +35,22 @@ docker compose up --build -d
 Useful URLs:
 
 - Dashboard: `http://localhost:3002`
-- API docs: `http://localhost:8001/docs`
+- API docs: `http://localhost:8002/docs`
 - Grafana: `http://localhost:3001`
 - Prometheus: `http://localhost:9090`
 - Loki: `http://localhost:3100`
+
+Seed default alert + compliance rules (idempotent):
+
+```bash
+bash scripts/seed-rules.sh
+```
+
+Run end-to-end security tests (13 checks):
+
+```bash
+bash scripts/e2e-security-test.sh
+```
 
 Start the demo workloads:
 

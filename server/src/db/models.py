@@ -249,6 +249,10 @@ class ScanResults(Base):
         server_default=func.now(),
     )
     status: Mapped[str] = mapped_column(Text, nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
 class ComplianceRules(Base):
     """
@@ -317,16 +321,19 @@ class Alerts(Base):
         UUID(as_uuid=True),
         nullable=False,
     )
+    rule_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     rule_name: Mapped[str] = mapped_column(Text, nullable=False)
     severity: Mapped[str] = mapped_column(Text, nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
+    alert_metadata: Mapped[Any] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 class AlertRules(Base):
     """
@@ -339,6 +346,8 @@ class AlertRules(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     metric: Mapped[str] = mapped_column(Text, nullable=False)
     operator: Mapped[str] = mapped_column(Text, nullable=False)
     threshold: Mapped[float] = mapped_column(nullable=False)

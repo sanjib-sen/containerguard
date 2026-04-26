@@ -220,9 +220,70 @@
       }
     },
     {
+      "title": "Alerts Fired (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "targets": [
+        {
+          "expr": "sum by (severity) (rate(containerguard_alerts_fired_total[5m]))",
+          "legendFormat": "{{severity}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Compliance Evaluations (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(containerguard_compliance_evaluations_total[5m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Vulnerabilities by Image",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+      "targets": [
+        {
+          "expr": "containerguard_scan_vulnerabilities",
+          "legendFormat": "{{image}} / {{severity}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true
+      }
+    },
+    {
+      "title": "Scans Total",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 44 },
+      "targets": [
+        {
+          "expr": "sum by (status) (containerguard_scans_total)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
       "title": "Container Logs",
       "type": "logs",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 36 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 52 },
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "targets": [
         {

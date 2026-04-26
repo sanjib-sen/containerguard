@@ -1,6 +1,12 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 from .api.agents import router as agents_router
 from .api.alerts import router as alerts_router
@@ -10,6 +16,8 @@ from .api.scans import router as scans_router
 from .api.telemetry import router as telemetry_router
 from .api.websocket import router as websocket_router
 from .db import dispose_engine
+from .engines.alerts import alert_engine
+from .engines.anomaly import anomaly_engine
 from .metrics.exporter import build_metrics_app
 from .realtime import broker
 
@@ -17,7 +25,11 @@ from .realtime import broker
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await broker.start()
+    await alert_engine.start()
+    await anomaly_engine.start()
     yield
+    await anomaly_engine.stop()
+    await alert_engine.stop()
     await broker.stop()
     await dispose_engine()
 

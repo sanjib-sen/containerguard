@@ -117,3 +117,119 @@ class TelemetryIngestResponse(BaseModel):
     stored_processes: int
     stored_ports: int
     raw_payload: dict[str, Any]
+
+
+# ── Alert Rules ─────────────────────────────────────────────────────
+
+class AlertRuleCreateRequest(BaseModel):
+    name: str
+    description: str | None = None
+    metric: str = Field(description="One of: cpu_pct, mem_mb, mem_pct, net_bytes_sent, net_bytes_recv, disk_read_bytes, disk_write_bytes")
+    operator: str = Field(description="One of: gt, ge, lt, le, eq")
+    threshold: float
+    severity: str = Field(description="One of: low, medium, high, critical")
+    cooldown_sec: int = 300
+    enabled: bool = True
+
+
+class AlertRuleUpdateRequest(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    metric: str | None = None
+    operator: str | None = None
+    threshold: float | None = None
+    severity: str | None = None
+    cooldown_sec: int | None = None
+    enabled: bool | None = None
+
+
+class AlertRuleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    description: str | None
+    metric: str
+    operator: str
+    threshold: float
+    severity: str
+    cooldown_sec: int
+    enabled: bool
+
+
+# ── Alerts ──────────────────────────────────────────────────────────
+
+class AlertResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    agent_id: UUID
+    rule_id: UUID | None
+    rule_name: str
+    severity: str
+    message: str
+    status: str
+    alert_metadata: dict[str, Any] | None
+    created_at: datetime
+    acknowledged_at: datetime | None
+    resolved_at: datetime | None
+
+
+class AlertActionRequest(BaseModel):
+    status: str = Field(description="One of: acknowledged, resolved, open")
+
+
+# ── Compliance ──────────────────────────────────────────────────────
+
+class ComplianceRuleCreateRequest(BaseModel):
+    name: str
+    description: str
+    severity: str = Field(description="One of: low, medium, high, critical")
+    rule_json: dict[str, Any] = Field(
+        description="Predicate JSON. Supported types: 'no_root_processes', 'no_unauthorized_ports', 'no_sensitive_paths', 'network_blocklist', 'network_allowlist'"
+    )
+    enabled: bool = True
+
+
+class ComplianceRuleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    description: str
+    rule_json: dict[str, Any]
+    severity: str
+    enabled: bool
+
+
+class ComplianceResultResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    agent_id: UUID
+    rule_id: UUID
+    status: str
+    details: dict[str, Any] | None
+    evaluated_at: datetime
+
+
+# ── Scans ───────────────────────────────────────────────────────────
+
+class ScanRequest(BaseModel):
+    image: str = Field(description="Image to scan, e.g. 'python:3.12-slim' or 'redis:7'")
+    agent_id: UUID | None = None
+
+
+class ScanResultResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    image_name: str
+    image_tag: str | None
+    status: str
+    vulnerabilities_json: dict[str, Any] | list[Any] | None
+    error_message: str | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    scanned_at: datetime
+    agent_id: UUID | None

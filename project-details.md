@@ -470,13 +470,18 @@ container-guard/
 - [x] Agent: Rich demo logging (security events, outbound network calls)
 - **Deliverable**: Full log pipeline from containers -> Loki -> Grafana + Dashboard
 
-### Milestone 3: Security Features (Weeks 7-9)
-- [ ] Vulnerability scanning via Trivy integration
-- [ ] Compliance rule engine + evaluation
-- [ ] Alert manager with threshold rules
-- [ ] Network allowlist/blocklist enforcement
-- [ ] Anomaly detection (Z-score on resource metrics)
-- **Deliverable**: Scan an image, evaluate compliance, trigger alerts
+### Milestone 3: Security Features (Weeks 7-9)  ✅ COMPLETE
+- [x] Vulnerability scanning via Trivy integration
+- [x] Compliance rule engine + evaluation (5 predicate types: root processes, ports, paths, network allow/blocklist)
+- [x] Alert manager with threshold rules (CRUD, cooldown via Redis, lifecycle: open/ack/resolved)
+- [x] Network allowlist/blocklist enforcement (via compliance engine)
+- [x] Anomaly detection (Z-score, rolling window in Redis, 2.5σ threshold)
+- [x] WebSocket alert broadcast via Redis pub/sub (verified)
+- [x] Prometheus metrics for alerts/compliance/scans
+- [x] Dashboard UI: Alerts page, Alert Rules CRUD, Compliance, Scans
+- [x] Sidebar live alert badge
+- [x] End-to-end test script (13 checks, all passing)
+- **Deliverable**: Scan an image, evaluate compliance, trigger alerts ✓
 
 ### Milestone 4: Polish & Demo (Weeks 10-12) -- Final Demo
 - [x] Dashboard: full UI (network view, alerts, compliance, scans pages)

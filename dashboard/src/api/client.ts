@@ -66,9 +66,105 @@ export interface PortSnapshot {
   timestamp: string;
 }
 
+// ── Alerts ─────────────────────────────────────────────────────────
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  description: string | null;
+  metric: string;
+  operator: string;
+  threshold: number;
+  severity: string;
+  cooldown_sec: number;
+  enabled: boolean;
+}
+
+export interface AlertRuleInput {
+  name: string;
+  description?: string | null;
+  metric: string;
+  operator: string;
+  threshold: number;
+  severity: string;
+  cooldown_sec: number;
+  enabled: boolean;
+}
+
+export interface Alert {
+  id: string;
+  agent_id: string;
+  rule_id: string | null;
+  rule_name: string;
+  severity: string;
+  message: string;
+  status: string;
+  alert_metadata: Record<string, unknown> | null;
+  created_at: string;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
+}
+
+// ── Compliance ─────────────────────────────────────────────────────
+
+export interface ComplianceRule {
+  id: string;
+  name: string;
+  description: string;
+  rule_json: Record<string, unknown>;
+  severity: string;
+  enabled: boolean;
+}
+
+export interface ComplianceRuleInput {
+  name: string;
+  description: string;
+  rule_json: Record<string, unknown>;
+  severity: string;
+  enabled: boolean;
+}
+
+export interface ComplianceResult {
+  id: string;
+  agent_id: string;
+  rule_id: string;
+  status: string;
+  details: Record<string, unknown> | null;
+  evaluated_at: string;
+}
+
+// ── Scans ──────────────────────────────────────────────────────────
+
+export interface ScanResult {
+  id: string;
+  image_name: string;
+  image_tag: string | null;
+  status: string;
+  vulnerabilities_json: Record<string, unknown> | unknown[] | null;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  scanned_at: string;
+  agent_id: string | null;
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+async function jsonRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status}: ${text}`);
+  }
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
@@ -97,4 +193,42 @@ export const api = {
     get<ProcessSnapshot[]>(`/telemetry/${agentId}/processes?hours=${hours}&limit=${limit}`),
   getAgentPorts: (agentId: string, hours = 1, limit = 200) =>
     get<PortSnapshot[]>(`/telemetry/${agentId}/ports?hours=${hours}&limit=${limit}`),
+
+  // Alerts
+  getAlerts: (params: { agent_id?: string; status?: string; severity?: string; limit?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.agent_id) q.set('agent_id', params.agent_id);
+    if (params.status) q.set('status', params.status);
+    if (params.severity) q.set('severity', params.severity);
+    if (params.limit) q.set('limit', String(params.limit));
+    return get<Alert[]>(`/alerts/?${q}`);
+  },
+  setAlertStatus: (alertId: string, status: string) =>
+    jsonRequest<Alert>('PATCH', `/alerts/${alertId}`, { status }),
+
+  // Alert Rules
+  getAlertRules: () => get<AlertRule[]>('/alerts/rules/'),
+  createAlertRule: (rule: AlertRuleInput) => jsonRequest<AlertRule>('POST', '/alerts/rules/', rule),
+  updateAlertRule: (id: string, rule: Partial<AlertRuleInput>) =>
+    jsonRequest<AlertRule>('PATCH', `/alerts/rules/${id}`, rule),
+  deleteAlertRule: (id: string) => jsonRequest<void>('DELETE', `/alerts/rules/${id}`),
+
+  // Compliance
+  getComplianceRules: () => get<ComplianceRule[]>('/compliance/rules/'),
+  createComplianceRule: (rule: ComplianceRuleInput) =>
+    jsonRequest<ComplianceRule>('POST', '/compliance/rules/', rule),
+  deleteComplianceRule: (id: string) => jsonRequest<void>('DELETE', `/compliance/rules/${id}`),
+  getComplianceResults: (params: { agent_id?: string; limit?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.agent_id) q.set('agent_id', params.agent_id);
+    if (params.limit) q.set('limit', String(params.limit));
+    return get<ComplianceResult[]>(`/compliance/results/?${q}`);
+  },
+  getComplianceStatus: () => get<ComplianceResult[]>('/compliance/status/'),
+
+  // Scans
+  getScans: (limit = 100) => get<ScanResult[]>(`/scans/?limit=${limit}`),
+  getScan: (id: string) => get<ScanResult>(`/scans/${id}`),
+  createScan: (image: string, agentId?: string) =>
+    jsonRequest<ScanResult>('POST', '/scans/', { image, agent_id: agentId }),
 };

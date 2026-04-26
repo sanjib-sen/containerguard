@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Agent, ResourceSnapshot } from '../api/client';
 import { useWebSocket } from '../hooks/useWebSocket';
+import type { TelemetryMessage } from '../hooks/useWebSocket';
 import { StatusBadge } from '../components/StatusBadge';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -19,7 +20,7 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [latestResources, setLatestResources] = useState<ResourceSnapshot[]>([]);
-  const { lastMessage, connected } = useWebSocket('/ws/dashboard');
+  const { lastMessage, connected } = useWebSocket<TelemetryMessage>('/ws/dashboard');
 
   // Fetch
   useEffect(() => {
