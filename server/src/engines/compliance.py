@@ -19,6 +19,7 @@ from uuid import UUID
 from ..db.models import Agent, ComplianceRules
 from ..db.repository.alertsRepo import AlertsRepository
 from ..db.repository.complianceRepo import ComplianceRepository
+from ..metrics.exporter import record_compliance_evaluation
 from ..schemas import TelemetryIngestRequest
 from .alerts import alert_engine
 
@@ -52,6 +53,7 @@ class ComplianceEngine:
                 status=status,
                 details=details,
             )
+            record_compliance_evaluation(status)
 
             if status == "fail":
                 # Fire an alert for the violation

@@ -50,6 +50,31 @@ RESOURCE_SNAPSHOTS_STORED_TOTAL = Counter(
     "Total resource snapshots stored in PostgreSQL.",
 )
 
+ALERTS_FIRED_TOTAL = Counter(
+    "containerguard_alerts_fired_total",
+    "Total alerts created by the alert engine.",
+    labelnames=("severity", "rule_name"),
+)
+
+COMPLIANCE_EVALUATIONS_TOTAL = Counter(
+    "containerguard_compliance_evaluations_total",
+    "Total compliance rule evaluations.",
+    labelnames=("status",),
+)
+
+SCANS_TOTAL = Counter(
+    "containerguard_scans_total",
+    "Total vulnerability scans triggered.",
+    labelnames=("status",),
+)
+
+SCAN_VULNERABILITIES = Gauge(
+    "containerguard_scan_vulnerabilities",
+    "Vulnerability count per scan by severity.",
+    labelnames=("image", "severity"),
+    multiprocess_mode="livemostrecent",
+)
+
 AGENTS_TOTAL = Gauge(
     "containerguard_agents_total",
     "Current number of registered agents.",
@@ -177,3 +202,20 @@ def set_latest_resource_metrics(
     RESOURCE_NET_BYTES_RECV.labels(**labels).set(net_bytes_recv)
     RESOURCE_DISK_READ_BYTES.labels(**labels).set(disk_read_bytes)
     RESOURCE_DISK_WRITE_BYTES.labels(**labels).set(disk_write_bytes)
+
+
+def record_alert_fired(severity: str, rule_name: str) -> None:
+    ALERTS_FIRED_TOTAL.labels(severity=severity, rule_name=rule_name).inc()
+
+
+def record_compliance_evaluation(status: str) -> None:
+    COMPLIANCE_EVALUATIONS_TOTAL.labels(status=status).inc()
+
+
+def record_scan(status: str) -> None:
+    SCANS_TOTAL.labels(status=status).inc()
+
+
+def set_scan_vulnerabilities(image: str, counts: dict[str, int]) -> None:
+    for severity, count in counts.items():
+        SCAN_VULNERABILITIES.labels(image=image, severity=severity).set(count)

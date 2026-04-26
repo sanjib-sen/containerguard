@@ -15,6 +15,7 @@ import redis.asyncio as redis
 from ..config import get_settings
 from ..db.models import Agent, AlertRules, Alerts
 from ..db.repository.alertsRepo import AlertsRepository
+from ..metrics.exporter import record_alert_fired
 from ..realtime import broker
 from ..schemas import ResourcesPayload
 
@@ -140,6 +141,7 @@ class AlertEngine:
             )
             triggered.append(alert)
             logger.info("alert fired: %s", message)
+            record_alert_fired(rule.severity, rule.name)
             await broker.publish_alert(_alert_to_dict(alert, agent))
 
         return triggered
@@ -173,6 +175,7 @@ class AlertEngine:
             alert_metadata=metadata,
         )
         logger.info("alert fired: %s", message)
+        record_alert_fired(severity, rule_name)
         await broker.publish_alert(_alert_to_dict(alert, agent))
         return alert
 

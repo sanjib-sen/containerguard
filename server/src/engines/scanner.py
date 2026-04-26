@@ -14,6 +14,7 @@ from uuid import UUID
 from ..db.repository.scansRepo import ScansRepository
 from ..db.session import get_session_factory
 from ..db.dataAccessLayer import create_data_access_layer
+from ..metrics.exporter import record_scan, set_scan_vulnerabilities
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +34,18 @@ class TrivyScanner:
                     vulnerabilities=vulnerabilities,
                     status="completed",
                 )
+                record_scan("completed")
+                set_scan_vulnerabilities(image, _count_severities(vulnerabilities))
                 logger.info("scan %s completed for image %s", scan_id, image)
             except asyncio.TimeoutError:
                 await dal.scans.update_scan_failed(
                     scan_id, error_message=f"Scan timed out after {self.TIMEOUT_SECONDS}s"
                 )
+                record_scan("timeout")
                 logger.error("scan %s timed out", scan_id)
             except Exception as exc:
                 await dal.scans.update_scan_failed(scan_id, error_message=str(exc))
+                record_scan("failed")
                 logger.exception("scan %s failed", scan_id)
 
     async def _run_trivy(self, image: str) -> Any:
@@ -67,6 +72,17 @@ class TrivyScanner:
             raise RuntimeError(f"failed to parse trivy JSON output: {exc}") from exc
 
         return data
+
+
+def _count_severities(report: Any) -> dict[str, int]:
+    counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
+    if not isinstance(report, dict):
+        return counts
+    for r in report.get("Results") or []:
+        for v in r.get("Vulnerabilities") or []:
+            sev = (v.get("Severity") or "UNKNOWN").upper()
+            counts[sev] = counts.get(sev, 0) + 1
+    return counts
 
 
 scanner = TrivyScanner()
