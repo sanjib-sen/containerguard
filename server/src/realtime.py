@@ -31,8 +31,22 @@ class RedisWebSocketBroker:
         self._publisher = redis.from_url(redis_url, decode_responses=True)
         self._subscriber = redis.from_url(redis_url, decode_responses=True)
 
-        await self._publisher.ping()
-        await self._subscriber.ping()
+        # Retry the initial ping — Redis service may not be DNS-resolvable for the
+        # first few seconds even when its healthcheck is green inside the Docker
+        # network on a cold start.
+        last_exc: Exception | None = None
+        for attempt in range(10):
+            try:
+                await self._publisher.ping()
+                await self._subscriber.ping()
+                last_exc = None
+                break
+            except Exception as exc:
+                last_exc = exc
+                logger.warning("redis ping failed (attempt %d/10): %s", attempt + 1, exc)
+                await asyncio.sleep(1.5)
+        if last_exc is not None:
+            raise last_exc
 
         self._subscription_task = asyncio.create_task(self._run_subscription_loop())
         logger.info("started Redis websocket broker using %s", redis_url)

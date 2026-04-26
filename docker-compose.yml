@@ -54,9 +54,11 @@ services:
       LOKI_URL: http://loki:3100
       REDIS_URL: redis://redis:6379/0
     ports:
-      - "8001:8000"
+      - "8002:8000"
     volumes:
       - prometheus_multiproc:/tmp/containerguard-prometheus
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - trivy_cache:/root/.cache/trivy
 
   heartbeat-monitor:
     build:
@@ -216,3 +218,4 @@ volumes:
   prometheus_data:
   loki_data:
   grafana_data:
+  trivy_cache:

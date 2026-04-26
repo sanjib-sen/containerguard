@@ -6,6 +6,7 @@ import {
 import { api } from '../api/client';
 import type { Agent, ResourceSnapshot, NetworkEvent, FilesystemEvent, ProcessSnapshot, PortSnapshot } from '../api/client';
 import { useWebSocket } from '../hooks/useWebSocket';
+import type { TelemetryMessage } from '../hooks/useWebSocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { LogViewer } from '../components/LogViewer';
 
@@ -19,7 +20,7 @@ export function AgentDetail() {
   const [processes, setProcesses] = useState<ProcessSnapshot[]>([]);
   const [ports, setPorts] = useState<PortSnapshot[]>([]);
   const [tab, setTab] = useState<'overview' | 'network' | 'filesystem' | 'processes' | 'ports' | 'logs'>('overview');
-  const { lastMessage } = useWebSocket('/ws/dashboard');
+  const { lastMessage } = useWebSocket<TelemetryMessage>('/ws/dashboard');
 
   // Fetch all data for this agent
   useEffect(() => {
