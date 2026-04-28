@@ -18,48 +18,7 @@ router = APIRouter(
 )
 
 
-# ── Alerts ──
-
-@router.get("/", response_model=list[AlertResponse])
-async def listAlerts(
-    dal: DataAccessLayer = Depends(get_dal),
-    agent_id: UUID | None = Query(default=None),
-    status: str | None = Query(default=None, description="open / acknowledged / resolved"),
-    severity: str | None = Query(default=None),
-    limit: int = Query(default=200, ge=1, le=2000),
-):
-    alerts = await dal.alerts.list_alerts(
-        agent_id=agent_id,
-        status=status,
-        severity=severity,
-        limit=limit,
-    )
-    return [AlertResponse.model_validate(a) for a in alerts]
-
-
-@router.get("/{alert_id}", response_model=AlertResponse)
-async def getAlert(alert_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
-    alert = await dal.alerts.get_alert(alert_id)
-    if alert is None:
-        raise HTTPException(status_code=404, detail="Alert not found")
-    return AlertResponse.model_validate(alert)
-
-
-@router.patch("/{alert_id}", response_model=AlertResponse)
-async def updateAlertStatus(
-    alert_id: UUID,
-    payload: AlertActionRequest,
-    dal: DataAccessLayer = Depends(get_dal),
-):
-    if payload.status not in {"open", "acknowledged", "resolved"}:
-        raise HTTPException(status_code=400, detail="status must be open, acknowledged, or resolved")
-    alert = await dal.alerts.set_alert_status(alert_id, payload.status)
-    if alert is None:
-        raise HTTPException(status_code=404, detail="Alert not found")
-    return AlertResponse.model_validate(alert)
-
-
-# ── Alert Rules ──
+# Alert Rules
 
 @router.get("/rules/", response_model=list[AlertRuleResponse])
 async def listRules(dal: DataAccessLayer = Depends(get_dal)):
@@ -103,3 +62,44 @@ async def deleteRule(rule_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
     deleted = await dal.alerts.delete_rule(rule_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Rule not found")
+
+
+# Alerts
+
+@router.get("/", response_model=list[AlertResponse])
+async def listAlerts(
+    dal: DataAccessLayer = Depends(get_dal),
+    agent_id: UUID | None = Query(default=None),
+    status: str | None = Query(default=None, description="open / acknowledged / resolved"),
+    severity: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=2000),
+):
+    alerts = await dal.alerts.list_alerts(
+        agent_id=agent_id,
+        status=status,
+        severity=severity,
+        limit=limit,
+    )
+    return [AlertResponse.model_validate(a) for a in alerts]
+
+
+@router.get("/{alert_id}", response_model=AlertResponse)
+async def getAlert(alert_id: UUID, dal: DataAccessLayer = Depends(get_dal)):
+    alert = await dal.alerts.get_alert(alert_id)
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return AlertResponse.model_validate(alert)
+
+
+@router.patch("/{alert_id}", response_model=AlertResponse)
+async def updateAlertStatus(
+    alert_id: UUID,
+    payload: AlertActionRequest,
+    dal: DataAccessLayer = Depends(get_dal),
+):
+    if payload.status not in {"open", "acknowledged", "resolved"}:
+        raise HTTPException(status_code=400, detail="status must be open, acknowledged, or resolved")
+    alert = await dal.alerts.set_alert_status(alert_id, payload.status)
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return AlertResponse.model_validate(alert)
