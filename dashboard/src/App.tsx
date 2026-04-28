@@ -9,6 +9,7 @@ import { Alerts } from './pages/Alerts';
 import { AlertRules } from './pages/AlertRules';
 import { Compliance } from './pages/Compliance';
 import { Scans } from './pages/Scans';
+import { Metrics } from './pages/Metrics';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/alerts/rules" element={<AlertRules />} />
             <Route path="/compliance" element={<Compliance />} />
             <Route path="/scans" element={<Scans />} />
+            <Route path="/metrics" element={<Metrics />} />
           </Routes>
         </main>
       </div>

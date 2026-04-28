@@ -5,13 +5,14 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import type { AlertMessage } from '../hooks/useWebSocket';
 
 const links = [
-  { to: '/', label: 'Overview', icon: '□' },
-  { to: '/agents', label: 'Agents', icon: '▣' },
-  { to: '/network', label: 'Network', icon: '⇄' },
-  { to: '/logs', label: 'Logs', icon: '☰' },
+  { to: '/', label: 'Overview', icon: 'O' },
+  { to: '/agents', label: 'Agents', icon: 'A' },
+  { to: '/network', label: 'Network', icon: 'N' },
+  { to: '/logs', label: 'Logs', icon: 'L' },
+  { to: '/metrics', label: 'Metrics', icon: 'M' },
   { to: '/alerts', label: 'Alerts', icon: '!', badge: 'alerts' as const },
-  { to: '/compliance', label: 'Compliance', icon: '✓' },
-  { to: '/scans', label: 'Scans', icon: '⊙' },
+  { to: '/compliance', label: 'Compliance', icon: 'C' },
+  { to: '/scans', label: 'Scans', icon: 'S' },
 ];
 
 export function Sidebar() {
