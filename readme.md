@@ -12,7 +12,7 @@ Developed by [sanjib](https://github.com/sanjib-sen), [Jackson](https://github.c
 - `server/` - FastAPI API, DB layer, migrations, metrics, heartbeat worker, security engines
   - `src/engines/` - alert manager, anomaly detection (Z-score), compliance engine, Trivy scanner
 - `dashboard/` - React frontend (Overview, Agents, Alerts, Compliance, Scans, Logs)
-- `demos/basic-app/` - example workload with the app and agent in the same container
+- `demos/basic-app/`, `demo/` - example workloads monitored by demo agents
 - `docker-compose.yml` - central stack
 - `docker-compose.demos.yml` - demo workloads
 - `prometheus/`, `loki/`, `promtail/`, `grafana/` - observability configuration
@@ -52,6 +52,7 @@ Run end-to-end security tests (13 checks):
 bash scripts/e2e-security-test.sh
 ```
 
+
 Start the demo workloads:
 
 ```bash
@@ -60,8 +61,9 @@ docker compose -f docker-compose.demos.yml up --build -d
 
 Demo app URLs:
 
-- App: `http://localhost:8088`
-- Write endpoint: `http://localhost:8088/write`
+- Basic app: `http://localhost:8088`
+- Basic app write endpoint: `http://localhost:8088/write`
+- Web API demo: `http://localhost:8080`
 
 Stop everything:
 

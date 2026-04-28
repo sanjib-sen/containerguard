@@ -6,6 +6,7 @@ services:
     container_name: containerguard-basic-app
     environment:
       SERVER_URL: http://containerguard-server:8000
+      HOSTNAME: basic-app
       CONTAINER_ID: containerguard-basic-app
       IMAGE: containerguard/basic-app:local
       TELEMETRY_INTERVAL_SECONDS: 15
@@ -15,6 +16,70 @@ services:
       - containerguard
     ports:
       - "8088:8080"
+
+  agent:
+    build:
+      context: ./agent
+    container_name: containerguard-agent
+    hostname: demo-standalone
+    environment:
+      SERVER_URL: http://containerguard-server:8000
+      IMAGE: containerguard-agent:latest
+      CONTAINER_ID: containerguard-agent
+      TELEMETRY_INTERVAL_SECONDS: 15
+      HEARTBEAT_INTERVAL_SECONDS: 5
+    networks:
+      - containerguard
+
+  demo-web-api:
+    build:
+      context: ./demo/web-api
+    container_name: demo-web-api
+    networks:
+      - containerguard
+    ports:
+      - "8080:8080"
+
+  agent-web-api:
+    build:
+      context: ./agent
+    container_name: containerguard-agent-web-api
+    pid: "service:demo-web-api"
+    network_mode: "service:demo-web-api"
+    depends_on:
+      demo-web-api:
+        condition: service_started
+    environment:
+      SERVER_URL: http://containerguard-server:8000
+      HOSTNAME: web-api
+      IMAGE: demo-web-api:latest
+      CONTAINER_ID: demo-web-api
+      TELEMETRY_INTERVAL_SECONDS: 10
+      HEARTBEAT_INTERVAL_SECONDS: 5
+
+  demo-worker:
+    build:
+      context: ./demo/worker
+    container_name: demo-worker
+    networks:
+      - containerguard
+
+  agent-worker:
+    build:
+      context: ./agent
+    container_name: containerguard-agent-worker
+    pid: "service:demo-worker"
+    network_mode: "service:demo-worker"
+    depends_on:
+      demo-worker:
+        condition: service_started
+    environment:
+      SERVER_URL: http://containerguard-server:8000
+      HOSTNAME: bg-worker
+      IMAGE: demo-worker:latest
+      CONTAINER_ID: demo-worker
+      TELEMETRY_INTERVAL_SECONDS: 10
+      HEARTBEAT_INTERVAL_SECONDS: 5
 
 networks:
   containerguard:
