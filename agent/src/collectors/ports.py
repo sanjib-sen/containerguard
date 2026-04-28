@@ -31,89 +31,57 @@ def _get_process_name(pid: int) -> str:
             return "unknown"
 
 
+def _parse_ss_block(lines: list[str], protocol: str, seen: set[tuple[int, str]]) -> list[OpenPort]:
+    """Parse ss output lines for a given protocol, deduplicating via seen."""
+    ports: list[OpenPort] = []
+    for line in lines:
+        parts = line.split()
+        if len(parts) < 5:
+            continue
+        # Parse local address (e.g., "0.0.0.0:8080" or "*:8080")
+        local_addr = parts[3]
+        port_str = local_addr.rsplit(":", 1)[-1]
+        try:
+            port_num = int(port_str)
+        except ValueError:
+            continue
+
+        key = (port_num, protocol)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        # Parse process info from the last column (e.g., 'users:(("python",pid=1,fd=7))')
+        pid = 0
+        proc_name = "unknown"
+        if len(parts) >= 6:
+            proc_col = parts[5]
+            if "pid=" in proc_col:
+                try:
+                    pid = int(proc_col.split("pid=")[1].split(",")[0].split(")")[0])
+                    proc_name = _get_process_name(pid)
+                except (ValueError, IndexError):
+                    pass
+            if proc_name == "unknown" and "((" in proc_col:
+                try:
+                    proc_name = proc_col.split('(("')[1].split('"')[0]
+                except IndexError:
+                    pass
+
+        ports.append(OpenPort(port=port_num, protocol=protocol, pid=pid, process=proc_name))
+    return ports
+
+
 def _ss_fallback() -> list[OpenPort]:
     """Use ss to find listening ports with process info."""
     ports: list[OpenPort] = []
     seen: set[tuple[int, str]] = set()
     try:
-        result = subprocess.run(
-            ["ss", "-tlnp"],
-            capture_output=True, text=True, timeout=5,
-        )
-        for line in result.stdout.splitlines()[1:]:
-            parts = line.split()
-            if len(parts) < 5:
-                continue
-            # Parse local address (e.g., "0.0.0.0:8080" or "*:8080")
-            local_addr = parts[3]
-            port_str = local_addr.rsplit(":", 1)[-1]
-            try:
-                port_num = int(port_str)
-            except ValueError:
-                continue
+        tcp = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True, timeout=5)
+        ports += _parse_ss_block(tcp.stdout.splitlines()[1:], "tcp", seen)
 
-            key = (port_num, "tcp")
-            if key in seen:
-                continue
-            seen.add(key)
-
-            # Parse process info from the last column (e.g., 'users:(("python",pid=1,fd=7))')
-            pid = 0
-            proc_name = "unknown"
-            if len(parts) >= 6:
-                proc_col = parts[5]
-                if "pid=" in proc_col:
-                    try:
-                        pid = int(proc_col.split("pid=")[1].split(",")[0].split(")")[0])
-                        proc_name = _get_process_name(pid)
-                    except (ValueError, IndexError):
-                        pass
-                if proc_name == "unknown" and "((" in proc_col:
-                    try:
-                        proc_name = proc_col.split('(("')[1].split('"')[0]
-                    except (IndexError):
-                        pass
-
-            ports.append(OpenPort(port=port_num, protocol="tcp", pid=pid, process=proc_name))
-
-        # Also check UDP
-        result = subprocess.run(
-            ["ss", "-ulnp"],
-            capture_output=True, text=True, timeout=5,
-        )
-        for line in result.stdout.splitlines()[1:]:
-            parts = line.split()
-            if len(parts) < 5:
-                continue
-            local_addr = parts[3]
-            port_str = local_addr.rsplit(":", 1)[-1]
-            try:
-                port_num = int(port_str)
-            except ValueError:
-                continue
-
-            key = (port_num, "udp")
-            if key in seen:
-                continue
-            seen.add(key)
-
-            pid = 0
-            proc_name = "unknown"
-            if len(parts) >= 6:
-                proc_col = parts[5]
-                if "pid=" in proc_col:
-                    try:
-                        pid = int(proc_col.split("pid=")[1].split(",")[0].split(")")[0])
-                        proc_name = _get_process_name(pid)
-                    except (ValueError, IndexError):
-                        pass
-                if proc_name == "unknown" and "((" in proc_col:
-                    try:
-                        proc_name = proc_col.split('(("')[1].split('"')[0]
-                    except (IndexError):
-                        pass
-
-            ports.append(OpenPort(port=port_num, protocol="udp", pid=pid, process=proc_name))
+        udp = subprocess.run(["ss", "-ulnp"], capture_output=True, text=True, timeout=5)
+        ports += _parse_ss_block(udp.stdout.splitlines()[1:], "udp", seen)
 
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as exc:
         logger.debug("ss fallback failed: %s", exc)
